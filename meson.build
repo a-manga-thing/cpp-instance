@@ -6,8 +6,8 @@ add_project_arguments(['--std=c++2a'], language : 'cpp')
 add_project_link_arguments(['--std=c++2a'], language : 'cpp')
 
 cmake = import('cmake')
-ipfs_proj = cmake.subproject('cpp-ipfs-http-client')
-ipfs_lib = ipfs_proj.dependency('ipfs-http-client')
+#ipfs_proj = cmake.subproject('cpp-ipfs-http-client')
+#ipfs_lib = ipfs_proj.dependency('ipfs-http-client')
 
 dep = [
     cc.find_library('z'),
@@ -21,7 +21,7 @@ dep = [
     dependency('Drogon'),
     dependency('uuid'),
     dependency('fmt'),
-    ipfs_lib,
+#    ipfs_lib,
 ]
 
 inc = [
