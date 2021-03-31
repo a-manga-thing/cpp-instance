@@ -6,18 +6,20 @@
 #include <string>
 
 #define MAKETEMPLATE(table, rel) " manga.id IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
+#define MAKEEXTEMPLATE(table, rel) " manga.id NOT IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
 
-static void addWithAnd (
+static void addWith (
     bool& mFilter,
     std::stringstream& ss,
     const std::string& fmtstr,
-    const std::vector<std::string>& vec
+    const std::vector<std::string>& vec,
+    std::size_t minSize
 ) {
     static constexpr auto andQuery = " AND";
     
     if (vec.size()) {
         if (mFilter) ss << andQuery;
-        ss << fmt::format(fmtstr, joinVec(vec), vec.size());
+        ss << fmt::format(fmtstr, joinVec(vec), minSize);
         mFilter = true;
     }
 }
@@ -26,7 +28,8 @@ static std::string searchQuery (
     CSR title,
     const std::vector<std::string> authors,
     const std::vector<std::string> artists,
-    const std::vector<std::string> tags
+    const std::vector<std::string> tags,
+    const std::vector<std::string> tagsEx
 ) {
     static constexpr auto selectQuery = "SELECT manga.*";
     static constexpr auto fromQuery = " FROM manga";
@@ -36,6 +39,7 @@ static std::string searchQuery (
     static constexpr auto authorQueryTemplate = MAKETEMPLATE(person,author);
     static constexpr auto artistQueryTemplate = MAKETEMPLATE(person,artist);
     static constexpr auto tagQueryTemplate = MAKETEMPLATE(tag,manga_tag);
+    static constexpr auto tagExQueryTemplate = MAKEEXTEMPLATE(tag,manga_tag);
     
     bool mFilter{false};
     std::stringstream ss;
@@ -44,13 +48,14 @@ static std::string searchQuery (
     if (title.size()) {
         ss << joinQuery << whereQuery << fmt::format(titleQueryTemplate, title);
         mFilter = true;
-    } else if (authors.size() || artists.size() || tags.size()) {
+    } else if (authors.size() || artists.size() || tags.size() || tagsEx.size()) {
         ss << whereQuery;
     } else goto re;
     
-    addWithAnd(mFilter, ss, authorQueryTemplate, authors);
-    addWithAnd(mFilter, ss, artistQueryTemplate, artists);
-    addWithAnd(mFilter, ss, tagQueryTemplate, tags);
+    addWith(mFilter, ss, authorQueryTemplate, authors, authors.size());
+    addWith(mFilter, ss, artistQueryTemplate, artists, artists.size());
+    addWith(mFilter, ss, tagQueryTemplate, tags, tags.size());
+    addWith(mFilter, ss, tagExQueryTemplate, tagsEx, 1);
     
 re: ss << ";";
     return ss.str();
@@ -64,14 +69,15 @@ void MangaCtrl::getSearch (
     CSR artistsCSV,
     CSR tagsCSV
 ) {
+    std::vector<std::string> tags, tagsEx;
     auto authors = splitCSV(authorsCSV);
     auto artists = splitCSV(artistsCSV);
-    auto tags = splitCSV(tagsCSV);
+    splitCSV(tagsCSV, tags, tagsEx);
     
     auto dbClientPtr = getDbClient();
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
     dbClientPtr->execSqlAsync(
-        searchQuery(title, authors, artists, tags),
+        searchQuery(title, authors, artists, tags, tagsEx),
         [req, callbackPtr, this](const Result &r) {
             Json::Value ret;
             for (auto& itr : r) ret.append(Manga(itr).toJson());

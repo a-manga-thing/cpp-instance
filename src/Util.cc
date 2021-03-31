@@ -50,6 +50,31 @@ bool makeThumbnail(CSR name, const drogon::HttpFile& httpFile)
     return true;
 }
 
+bool isEx (std::string& str)
+{
+    if (str.back()=='-') { str.pop_back(); return true; }
+    else if (str.back()=='+') str.pop_back();
+    return false;
+}
+
+void splitCSV (
+    const std::string& str,
+    std::vector<std::string>& inVec,
+    std::vector<std::string>& exVec
+) {
+    std::stringstream ss{str};
+    
+    while (ss.good()) {
+        std::string temp;
+        std::getline(ss, temp, ',');
+        if (temp.empty()) continue;
+        bool ex = isEx(temp);
+        if (temp.empty()) continue;
+        if (ex) exVec.emplace_back(temp);
+        else inVec.emplace_back(temp);
+    }
+}
+
 std::vector<std::string> splitCSV(const std::string& str)
 {
     std::vector<std::string> ret {};
