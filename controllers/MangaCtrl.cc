@@ -7,16 +7,16 @@
 
 #define MAKETEMPLATE(table, rel) " manga.id IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
 
-static void addWithOr (
+static void addWithAnd (
     bool& mFilter,
     std::stringstream& ss,
     const std::string& fmtstr,
     const std::vector<std::string>& vec
 ) {
-    static constexpr auto orQuery = " AND";
+    static constexpr auto andQuery = " AND";
     
     if (vec.size()) {
-        if (mFilter) ss << orQuery;
+        if (mFilter) ss << andQuery;
         ss << fmt::format(fmtstr, joinVec(vec), vec.size());
         mFilter = true;
     }
@@ -48,9 +48,9 @@ static std::string searchQuery (
         ss << whereQuery;
     } else goto re;
     
-    addWithOr(mFilter, ss, authorQueryTemplate, authors);
-    addWithOr(mFilter, ss, artistQueryTemplate, artists);
-    addWithOr(mFilter, ss, tagQueryTemplate, tags);
+    addWithAnd(mFilter, ss, authorQueryTemplate, authors);
+    addWithAnd(mFilter, ss, artistQueryTemplate, artists);
+    addWithAnd(mFilter, ss, tagQueryTemplate, tags);
     
 re: ss << ";";
     return ss.str();
