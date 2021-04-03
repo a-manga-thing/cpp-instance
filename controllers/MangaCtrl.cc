@@ -361,7 +361,20 @@ void MangaCtrl::getSearch (
 
 void MangaCtrl::getFromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
 {
-    MangaCtrlBase::getOne(req, std::move(callback), std::move(id));
+    static constexpr auto query = "SELECT * FROM manga WHERE id = {};";
+    
+    auto dbClientPtr = getDbClient();
+    auto result = dbClientPtr->execSqlSync(fmt::format(query, id));
+    
+    if (result.size()) {
+        auto json = mangaToJson(dbClientPtr,Manga(*result.begin()));
+        callback(HttpResponse::newHttpJsonResponse(json));
+    } else {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k404NotFound);
+        callback(resp);
+    }
+    
 }
 
 void MangaCtrl::getChapter(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid, int ordinal)
