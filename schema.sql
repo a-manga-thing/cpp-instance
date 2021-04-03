@@ -27,10 +27,10 @@ INSERT INTO "manga" ("id", "type", "country_of_origin", "publication_status", "s
 
 CREATE TABLE "title" (
     "manga_id" INTEGER NOT NULL,
-    "text" TEXT NOT NULL
+    "name" TEXT NOT NULL
 );
 
-INSERT INTO "title" ("manga_id", "text") VALUES
+INSERT INTO "title" ("manga_id", "name") VALUES
 (1, 'YuruYuri'),
 (1, 'ゆるゆり'),
 (2, 'Yuyushiki'),

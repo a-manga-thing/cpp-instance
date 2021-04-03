@@ -29,7 +29,7 @@ static T getOrCreate(orm::DbClientPtr dbClientPtr, CSR name)
 void MangaCtrl::addTitle(CSR name, const Manga& manga)
 {
     Title title;
-    title.setText(name);
+    title.setName(name);
     title.setMangaId(manga.getValueOfId());
     drogon::orm::Mapper<Title> mapper(getDbClient());
     mapper.insertFuture(title);
@@ -251,8 +251,8 @@ void MangaCtrl::update(const HttpRequestPtr& req, HttpCallback&& callback)
     );
 }
 
-#define MAKETEMPLATE(table, rel) " manga.getValueOfId() IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
-#define MAKEEXTEMPLATE(table, rel) " manga.getValueOfId() NOT IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
+#define MAKETEMPLATE(table, rel) " manga.id IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
+#define MAKEEXTEMPLATE(table, rel) " manga.id NOT IN (SELECT "#rel".manga_id FROM "#rel" JOIN "#table" ON "#table".id = "#rel"."#table"_id WHERE "#table".name IN ({}) GROUP BY "#rel".manga_id HAVING COUNT(DISTINCT "#table".name) = {} )"
 
 static void addWith (
     bool& mFilter,
@@ -279,9 +279,9 @@ static std::string searchQuery (
 ) {
     static constexpr auto selectQuery = "SELECT manga.*";
     static constexpr auto fromQuery = " FROM manga";
-    static constexpr auto joinQuery = " INNER JOIN title ON manga.getValueOfId() = title.manga_id";
+    static constexpr auto joinQuery = " INNER JOIN title ON manga.id = title.manga_id";
     static constexpr auto whereQuery = " WHERE";
-    static constexpr auto titleQueryTemplate = " title.text LIKE '%{}%'";
+    static constexpr auto titleQueryTemplate = " title.name LIKE '%{}%'";
     static constexpr auto authorQueryTemplate = MAKETEMPLATE(person,author);
     static constexpr auto artistQueryTemplate = MAKETEMPLATE(person,artist);
     static constexpr auto tagQueryTemplate = MAKETEMPLATE(tag,manga_tag);
@@ -307,6 +307,34 @@ re: ss << ";";
     return ss.str();
 }
 
+#define GENERICQUERY(Type) "SELECT "#Type".name FROM "#Type" WHERE ("#Type".manga_id = {});"
+
+#define GETSIMPLEREL(Type) { \
+auto query = fmt::format(GENERICQUERY(Type), manga.getValueOfId()); \
+auto result = dbClientPtr->execSqlSync(query); \
+for (auto& row : result) ret[ #Type"s" ].append(row.begin()->as<std::string>()); \
+}
+
+#define COMPLEXQUERY(Type, Relation, IdField) "SELECT "#Type".name FROM "#Type" INNER JOIN "#Relation" ON "#Type".id = "#Relation"."#IdField" WHERE ("#Relation".manga_id = {});"
+
+#define GETCOMPLEXREL(Type, Relation, IdField, Label) { \
+auto query = fmt::format(COMPLEXQUERY(Type, Relation, IdField), manga.getValueOfId()); \
+auto result = dbClientPtr->execSqlSync(query); \
+for (auto& row : result) ret[ Label ].append(row.begin()->as<std::string>()); \
+}
+
+static Json::Value mangaToJson(orm::DbClientPtr dbClientPtr, const Manga& manga)
+{
+    auto ret = manga.toJson();
+    
+    GETSIMPLEREL(title)
+    GETCOMPLEXREL(person, author, person_id, "authors")
+    GETCOMPLEXREL(person, artist, person_id, "artists")
+    GETCOMPLEXREL(tag, manga_tag, tag_id, "tags")
+    
+    return ret;
+}
+
 void MangaCtrl::getSearch (
     const HttpRequestPtr& req,
     HttpCallback&& callback,
@@ -321,23 +349,14 @@ void MangaCtrl::getSearch (
     splitCSV(tagsCSV, tags, tagsEx);
     
     auto dbClientPtr = getDbClient();
-    auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
-    dbClientPtr->execSqlAsync(
-        searchQuery(title, authors, artists, tags, tagsEx),
-        [req, callbackPtr, this](const Result &r) {
-            Json::Value ret;
-            for (auto& itr : r) ret.append(Manga(itr).toJson());
-            return (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
-        },
-        [callbackPtr](const DrogonDbException &e) {
-            LOG_ERROR<<e.base().what();
-            Json::Value ret;
-            ret["error"] = "database error";
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
-            resp->setStatusCode(k500InternalServerError);
-            return (*callbackPtr)(resp);
-        });
     
+    auto result = dbClientPtr->execSqlSync(
+        searchQuery(title, authors, artists, tags, tagsEx)
+    );
+    
+    Json::Value ret;
+    for (auto& itr : result) ret.append(mangaToJson(dbClientPtr,Manga(itr)));
+    callback(HttpResponse::newHttpJsonResponse(ret));
 }
 
 void MangaCtrl::getFromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
