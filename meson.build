@@ -43,6 +43,8 @@ src = [
     'models/Manga.cc',
     'models/Person.cc',
     'models/Title.cc',
+    'models/Followers.cc',
+    'models/GlobalState.cc',
 ]
 
 executable('instance', sources : src, dependencies : dep, include_directories : inc)

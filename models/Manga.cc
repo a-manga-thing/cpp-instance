@@ -28,6 +28,8 @@ const std::string Manga::Cols::_scanlation_status = "scanlation_status";
 const std::string Manga::Cols::_mal_id = "mal_id";
 const std::string Manga::Cols::_anilist_id = "anilist_id";
 const std::string Manga::Cols::_mangaupdates_id = "mangaupdates_id";
+const std::string Manga::Cols::_global_id = "global_id";
+const std::string Manga::Cols::_update = "update";
 const std::string Manga::primaryKeyName = "id";
 const bool Manga::hasPrimaryKey = true;
 const std::string Manga::tableName = "manga";
@@ -40,7 +42,9 @@ const std::vector<typename Manga::MetaData> Manga::metaData_={
 {"scanlation_status","bool","bool",1,0,0,1},
 {"mal_id","uint64_t","integer",8,0,0,0},
 {"anilist_id","uint64_t","integer",8,0,0,0},
-{"mangaupdates_id","uint64_t","integer",8,0,0,0}
+{"mangaupdates_id","uint64_t","integer",8,0,0,0},
+{"global_id","std::string","string",0,0,0,1},
+{"update","uint64_t","integer",8,0,0,1}
 };
 const std::string &Manga::getColumnName(size_t index) noexcept(false)
 {
@@ -83,11 +87,19 @@ Manga::Manga(const Row &r, const ssize_t indexOffset) noexcept
         {
             mangaupdatesId_=std::make_shared<uint64_t>(r["mangaupdates_id"].as<uint64_t>());
         }
+        if(!r["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(r["global_id"].as<std::string>());
+        }
+        if(!r["update"].isNull())
+        {
+            update_=std::make_shared<uint64_t>(r["update"].as<uint64_t>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 8 > r.size())
+        if(offset + 10 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -133,13 +145,23 @@ Manga::Manga(const Row &r, const ssize_t indexOffset) noexcept
         {
             mangaupdatesId_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
+        index = offset + 8;
+        if(!r[index].isNull())
+        {
+            globalId_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 9;
+        if(!r[index].isNull())
+        {
+            update_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+        }
     }
 
 }
 
 Manga::Manga(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 10)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -207,6 +229,23 @@ Manga::Manga(const Json::Value &pJson, const std::vector<std::string> &pMasquera
         if(!pJson[pMasqueradingVector[7]].isNull())
         {
             mangaupdatesId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[7]].asUInt64());
+        }
+    }
+    if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson[pMasqueradingVector[8]].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[8]].asString());
+
+        }
+    }
+    if(!pMasqueradingVector[9].empty() && pJson.isMember(pMasqueradingVector[9]))
+    {
+        dirtyFlag_[9] = true;
+        if(!pJson[pMasqueradingVector[9]].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
         }
     }
 }
@@ -277,12 +316,28 @@ Manga::Manga(const Json::Value &pJson) noexcept(false)
             mangaupdatesId_=std::make_shared<uint64_t>((uint64_t)pJson["mangaupdates_id"].asUInt64());
         }
     }
+    if(pJson.isMember("global_id"))
+    {
+        dirtyFlag_[8]=true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("update"))
+    {
+        dirtyFlag_[9]=true;
+        if(!pJson["update"].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
+        }
+    }
 }
 
 void Manga::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 10)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -350,6 +405,22 @@ void Manga::updateByMasqueradedJson(const Json::Value &pJson,
             mangaupdatesId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[7]].asUInt64());
         }
     }
+    if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson[pMasqueradingVector[8]].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[8]].asString());
+        }
+    }
+    if(!pMasqueradingVector[9].empty() && pJson.isMember(pMasqueradingVector[9]))
+    {
+        dirtyFlag_[9] = true;
+        if(!pJson[pMasqueradingVector[9]].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
+        }
+    }
 }
                                                                     
 void Manga::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -415,6 +486,22 @@ void Manga::updateByJson(const Json::Value &pJson) noexcept(false)
         if(!pJson["mangaupdates_id"].isNull())
         {
             mangaupdatesId_=std::make_shared<uint64_t>((uint64_t)pJson["mangaupdates_id"].asUInt64());
+        }
+    }
+    if(pJson.isMember("global_id"))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("update"))
+    {
+        dirtyFlag_[9] = true;
+        if(!pJson["update"].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
         }
     }
 }
@@ -604,6 +691,51 @@ void Manga::setMangaupdatesIdToNull() noexcept
 }
 
 
+const std::string &Manga::getValueOfGlobalId() const noexcept
+{
+    const static std::string defaultValue = std::string();
+    if(globalId_)
+        return *globalId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Manga::getGlobalId() const noexcept
+{
+    return globalId_;
+}
+void Manga::setGlobalId(const std::string &pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(pGlobalId);
+    dirtyFlag_[8] = true;
+}
+void Manga::setGlobalId(std::string &&pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(std::move(pGlobalId));
+    dirtyFlag_[8] = true;
+}
+
+
+
+
+const uint64_t &Manga::getValueOfUpdate() const noexcept
+{
+    const static uint64_t defaultValue = uint64_t();
+    if(update_)
+        return *update_;
+    return defaultValue;
+}
+const std::shared_ptr<uint64_t> &Manga::getUpdate() const noexcept
+{
+    return update_;
+}
+void Manga::setUpdate(const uint64_t &pUpdate) noexcept
+{
+    update_ = std::make_shared<uint64_t>(pUpdate);
+    dirtyFlag_[9] = true;
+}
+
+
+
+
 void Manga::updateId(const uint64_t id)
 {
     id_ = std::make_shared<uint64_t>(id);
@@ -618,7 +750,9 @@ const std::vector<std::string> &Manga::insertColumns() noexcept
         "scanlation_status",
         "mal_id",
         "anilist_id",
-        "mangaupdates_id"
+        "mangaupdates_id",
+        "global_id",
+        "update"
     };
     return inCols;
 }
@@ -702,6 +836,28 @@ void Manga::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[8])
+    {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[9])
+    {
+        if(getUpdate())
+        {
+            binder << getValueOfUpdate();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Manga::updateColumns() const
@@ -734,6 +890,14 @@ const std::vector<std::string> Manga::updateColumns() const
     if(dirtyFlag_[7])
     {
         ret.push_back(getColumnName(7));
+    }
+    if(dirtyFlag_[8])
+    {
+        ret.push_back(getColumnName(8));
+    }
+    if(dirtyFlag_[9])
+    {
+        ret.push_back(getColumnName(9));
     }
     return ret;
 }
@@ -817,6 +981,28 @@ void Manga::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[8])
+    {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[9])
+    {
+        if(getUpdate())
+        {
+            binder << getValueOfUpdate();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Manga::toJson() const
 {
@@ -885,6 +1071,22 @@ Json::Value Manga::toJson() const
     {
         ret["mangaupdates_id"]=Json::Value();
     }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
+    }
+    if(getUpdate())
+    {
+        ret["update"]=(Json::UInt64)getValueOfUpdate();
+    }
+    else
+    {
+        ret["update"]=Json::Value();
+    }
     return ret;
 }
 
@@ -892,7 +1094,7 @@ Json::Value Manga::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 8)
+    if(pMasqueradingVector.size() == 10)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -982,6 +1184,28 @@ Json::Value Manga::toMasqueradedJson(
                 ret[pMasqueradingVector[7]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[8].empty())
+        {
+            if(getGlobalId())
+            {
+                ret[pMasqueradingVector[8]]=getValueOfGlobalId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[8]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[9].empty())
+        {
+            if(getUpdate())
+            {
+                ret[pMasqueradingVector[9]]=(Json::UInt64)getValueOfUpdate();
+            }
+            else
+            {
+                ret[pMasqueradingVector[9]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -1049,6 +1273,22 @@ Json::Value Manga::toMasqueradedJson(
     {
         ret["mangaupdates_id"]=Json::Value();
     }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
+    }
+    if(getUpdate())
+    {
+        ret["update"]=(Json::UInt64)getValueOfUpdate();
+    }
+    else
+    {
+        ret["update"]=Json::Value();
+    }
     return ret;
 }
 
@@ -1114,13 +1354,23 @@ bool Manga::validateJsonForCreation(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(7, "mangaupdates_id", pJson["mangaupdates_id"], err, true))
             return false;
     }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(8, "global_id", pJson["global_id"], err, true))
+            return false;
+    }
+    if(pJson.isMember("update"))
+    {
+        if(!validJsonOfField(9, "update", pJson["update"], err, true))
+            return false;
+    }
     return true;
 }
 bool Manga::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                const std::vector<std::string> &pMasqueradingVector,
                                                std::string &err)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 10)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1210,6 +1460,22 @@ bool Manga::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                   return false;
           }
       }
+      if(!pMasqueradingVector[8].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[8]))
+          {
+              if(!validJsonOfField(8, pMasqueradingVector[8], pJson[pMasqueradingVector[8]], err, true))
+                  return false;
+          }
+      }
+      if(!pMasqueradingVector[9].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[9]))
+          {
+              if(!validJsonOfField(9, pMasqueradingVector[9], pJson[pMasqueradingVector[9]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e) 
     {
@@ -1265,13 +1531,23 @@ bool Manga::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(7, "mangaupdates_id", pJson["mangaupdates_id"], err, false))
             return false;
     }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(8, "global_id", pJson["global_id"], err, false))
+            return false;
+    }
+    if(pJson.isMember("update"))
+    {
+        if(!validJsonOfField(9, "update", pJson["update"], err, false))
+            return false;
+    }
     return true;
 }
 bool Manga::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                              const std::vector<std::string> &pMasqueradingVector,
                                              std::string &err)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 10)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1320,6 +1596,16 @@ bool Manga::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
       {
           if(!validJsonOfField(7, pMasqueradingVector[7], pJson[pMasqueradingVector[7]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+      {
+          if(!validJsonOfField(8, pMasqueradingVector[8], pJson[pMasqueradingVector[8]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[9].empty() && pJson.isMember(pMasqueradingVector[9]))
+      {
+          if(!validJsonOfField(9, pMasqueradingVector[9], pJson[pMasqueradingVector[9]], err, false))
               return false;
       }
     }
@@ -1429,6 +1715,30 @@ bool Manga::validJsonOfField(size_t index,
             if(pJson.isNull())
             {
                 return true;
+            }
+            if(!pJson.isUInt64())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 8:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;                
+            }
+            break;
+        case 9:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
             }
             if(!pJson.isUInt64())
             {

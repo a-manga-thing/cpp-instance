@@ -1,3 +1,12 @@
+CREATE TABLE "global_state" (
+    "last_update" INTEGER  --unix timestamp
+);
+
+CREATE TABLE "followers" (
+    "id" STRING NOT NULL,  --uri
+    PRIMARY KEY("id")
+);
+
 CREATE TABLE "manga" (
     "id" INTEGER NOT NULL,
     "type" INTEGER NOT NULL,
@@ -7,6 +16,8 @@ CREATE TABLE "manga" (
     "mal_id" INTEGER,
     "anilist_id" INTEGER,
     "mangaupdates_id" INTEGER,
+    "global_id" STRING NOT NULL DEFAULT '',
+    "update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
     PRIMARY KEY("id")
 );
 
@@ -79,6 +90,7 @@ INSERT INTO "artist" ("manga_id", "person_id") VALUES
 CREATE TABLE "chapter" (
     "id" INTEGER NOT NULL,
     "manga_id" INTEGER NOT NULL,
+    "manga_global_id" STRING NOT NULL,
     "chapter_no" INTEGER NOT NULL,
     "chapter_postfix" STRING,
     "ordinal" INTEGER NOT NULL,
@@ -88,11 +100,12 @@ CREATE TABLE "chapter" (
     "language_id" STRING NOT NULL,
     "group_id" INTEGER,
     "date_added" INTEGER NOT NULL,
-    "ipfs_link" STRING NOT NULL,
+    "ipfs_link" STRING NOT NULL,  --global id
+    "update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
     PRIMARY KEY("id")
 );
 
-INSERT INTO "chapter" ("id", "manga_id", "chapter_no", "chapter_postfix", "ordinal", "pages", "title", "version", "language_id", "group_id", "date_added", "ipfs_link") VALUES
-(1, 1, 1, NULL, 100, 13, '', 0, 'en', NULL, 0, ''),
-(2, 1, 2, NULL, 200, 13, '', 1, 'en', NULL, 0, ''),
-(3, 2, 1, NULL, 100, 13, '', 0, 'en', NULL, 0, '');
+INSERT INTO "chapter" ("id", "manga_id", "manga_global_id", "chapter_no", "chapter_postfix", "ordinal", "pages", "title", "version", "language_id", "group_id", "date_added", "ipfs_link") VALUES
+(1, 1, '', 1, NULL, 100, 13, '', 0, 'en', NULL, 0, ''),
+(2, 1, '', 2, NULL, 200, 13, '', 1, 'en', NULL, 0, ''),
+(3, 2, '', 1, NULL, 100, 13, '', 0, 'en', NULL, 0, '');

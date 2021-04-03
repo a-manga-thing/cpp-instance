@@ -8,6 +8,8 @@
     "filename":"database.db",
     
     "tables":[
+        "global_state",
+        "followers",
         "manga",
         "title",
         "tag",
@@ -21,6 +23,19 @@
     "relationships": {
         "enabled": true,
         "items": [
+            {
+                "type": "many to many",
+                "original_table_name": "instance",
+                "original_key": "id",
+                "pivot_table": {
+                    "table_name": "instance",
+                    "original_key": "instance_id",
+                    "target_key": "follower_id"
+                },
+                "target_table_name": "instance",
+                "target_key": "id",
+                "enable_reverse": true
+            },
             {
                 "type": "has many",
                 "original_table_name": "manga",
