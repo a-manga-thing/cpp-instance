@@ -69,9 +69,9 @@ class MangaCtrl: public drogon::HttpController<MangaCtrl>, public MangaCtrlBase
 public:
     
     METHOD_LIST_BEGIN
-    ADD_METHOD_TO(MangaCtrl::add,"/manga",Post,Options);
-    ADD_METHOD_TO(MangaCtrl::update,"/manga",Put,Options);
-    ADD_METHOD_TO(MangaCtrl::remove,"/manga",Delete,Options);
+    ADD_METHOD_TO(MangaCtrl::add,"/sync/manga",Post,Options);
+    ADD_METHOD_TO(MangaCtrl::update,"/sync/manga",Put,Options);
+    ADD_METHOD_TO(MangaCtrl::remove,"/sync/manga",Delete,Options);
     ADD_METHOD_TO(MangaCtrl::getSearch,"/manga/search?title={1}&authors={2}&artists={3}&tags={4}",Get,Options);
     ADD_METHOD_TO(MangaCtrl::getFromId,"/manga/from_id?id={1}",Get,Options);
     ADD_METHOD_TO(MangaCtrl::getChapter,"/manga/get_chapter?mangaid={1}&ordinal={2}",Get,Options);

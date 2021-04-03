@@ -35,6 +35,7 @@ src = [
     'src/Util.cc',
     'controllers/MangaCtrlBase.cc',
     'controllers/MangaCtrl.cc',
+    'controllers/MangaSyncCtrl.cc',
     'models/Artist.cc',
     'models/Chapter.cc',
     'models/MangaTag.cc',
