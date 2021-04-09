@@ -168,10 +168,20 @@ void MangaCtrl::getThumbnail(const HttpRequestPtr& req, HttpCallback&& callback,
 }
 
 MangaCtrl::MangaCtrl()
-: MangaCtrlBase()
+: RestfulController({
+    "id",
+    "type",
+    "country_of_origin",
+    "publication_status",
+    "scanlation_status",
+    "mal_id",
+    "anilist_id",
+    "mangaupdates_id",
+    "global_id",
+    "update"})
 {
     enableMasquerading({
-        "", // the alias for the id column.
+        "id", // the alias for the id column.
         "type", // the alias for the type column.
         "country_of_origin", // the alias for the country_of_origin column.
         "publication_status", // the alias for the publication_status column.

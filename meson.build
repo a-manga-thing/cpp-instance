@@ -33,7 +33,6 @@ inc = [
 src = [
     'src/Main.cc',
     'src/Util.cc',
-    'controllers/MangaCtrlBase.cc',
     'controllers/MangaCtrl.cc',
     'controllers/MangaSyncCtrl.cc',
     'models/Artist.cc',
