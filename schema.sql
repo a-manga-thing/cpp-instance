@@ -2,11 +2,6 @@ CREATE TABLE "global_state" (
     "last_update" INTEGER  --unix timestamp
 );
 
-CREATE TABLE "followers" (
-    "id" STRING NOT NULL,  --uri
-    PRIMARY KEY("id")
-);
-
 CREATE TABLE "manga" (
     "id" INTEGER NOT NULL,
     "type" INTEGER NOT NULL,
@@ -100,7 +95,8 @@ CREATE TABLE "chapter" (
     "language_id" STRING NOT NULL,
     "group_id" INTEGER,
     "date_added" INTEGER NOT NULL,
-    "ipfs_link" STRING NOT NULL,  --global id
+    "ipfs_link" STRING NOT NULL,
+    "global_id" STRING NOT NULL DEFAULT '',
     "update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
     PRIMARY KEY("id")
 );

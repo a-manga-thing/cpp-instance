@@ -1,6 +1,8 @@
 //#include <ipfs/client.h>
 #include <drogon/drogon.h>
-#include <controllers/MangaCtrl.h>
+#include "Globals.h"
+
+Globals globals;
 
 int main (int argc, char** argv) {
     

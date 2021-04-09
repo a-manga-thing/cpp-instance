@@ -9,7 +9,6 @@
     
     "tables":[
         "global_state",
-        "followers",
         "manga",
         "title",
         "tag",

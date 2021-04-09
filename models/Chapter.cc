@@ -26,6 +26,7 @@ const std::string Chapter::Cols::_language_id = "language_id";
 const std::string Chapter::Cols::_group_id = "group_id";
 const std::string Chapter::Cols::_date_added = "date_added";
 const std::string Chapter::Cols::_ipfs_link = "ipfs_link";
+const std::string Chapter::Cols::_global_id = "global_id";
 const std::string Chapter::Cols::_update = "update";
 const std::string Chapter::primaryKeyName = "id";
 const bool Chapter::hasPrimaryKey = true;
@@ -45,6 +46,7 @@ const std::vector<typename Chapter::MetaData> Chapter::metaData_={
 {"group_id","uint64_t","integer",8,0,0,0},
 {"date_added","uint64_t","integer",8,0,0,1},
 {"ipfs_link","std::string","string",0,0,0,1},
+{"global_id","std::string","string",0,0,0,1},
 {"update","uint64_t","integer",8,0,0,1}
 };
 const std::string &Chapter::getColumnName(size_t index) noexcept(false)
@@ -108,6 +110,10 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
         {
             ipfsLink_=std::make_shared<std::string>(r["ipfs_link"].as<std::string>());
         }
+        if(!r["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(r["global_id"].as<std::string>());
+        }
         if(!r["update"].isNull())
         {
             update_=std::make_shared<uint64_t>(r["update"].as<uint64_t>());
@@ -116,7 +122,7 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 14 > r.size())
+        if(offset + 15 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -190,6 +196,11 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 13;
         if(!r[index].isNull())
         {
+            globalId_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 14;
+        if(!r[index].isNull())
+        {
             update_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
     }
@@ -198,7 +209,7 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
 
 Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 14)
+    if(pMasqueradingVector.size() != 15)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -317,7 +328,16 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[13] = true;
         if(!pJson[pMasqueradingVector[13]].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[13]].asUInt64());
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[13]].asString());
+
+        }
+    }
+    if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+    {
+        dirtyFlag_[14] = true;
+        if(!pJson[pMasqueradingVector[14]].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[14]].asUInt64());
         }
     }
 }
@@ -428,9 +448,17 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
             ipfsLink_=std::make_shared<std::string>(pJson["ipfs_link"].asString());
         }
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("global_id"))
     {
         dirtyFlag_[13]=true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("update"))
+    {
+        dirtyFlag_[14]=true;
         if(!pJson["update"].isNull())
         {
             update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
@@ -441,7 +469,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
 void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 14)
+    if(pMasqueradingVector.size() != 15)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -554,7 +582,15 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[13] = true;
         if(!pJson[pMasqueradingVector[13]].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[13]].asUInt64());
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[13]].asString());
+        }
+    }
+    if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+    {
+        dirtyFlag_[14] = true;
+        if(!pJson[pMasqueradingVector[14]].isNull())
+        {
+            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[14]].asUInt64());
         }
     }
 }
@@ -664,9 +700,17 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
             ipfsLink_=std::make_shared<std::string>(pJson["ipfs_link"].asString());
         }
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("global_id"))
     {
         dirtyFlag_[13] = true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("update"))
+    {
+        dirtyFlag_[14] = true;
         if(!pJson["update"].isNull())
         {
             update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
@@ -984,6 +1028,31 @@ void Chapter::setIpfsLink(std::string &&pIpfsLink) noexcept
 
 
 
+const std::string &Chapter::getValueOfGlobalId() const noexcept
+{
+    const static std::string defaultValue = std::string();
+    if(globalId_)
+        return *globalId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Chapter::getGlobalId() const noexcept
+{
+    return globalId_;
+}
+void Chapter::setGlobalId(const std::string &pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(pGlobalId);
+    dirtyFlag_[13] = true;
+}
+void Chapter::setGlobalId(std::string &&pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(std::move(pGlobalId));
+    dirtyFlag_[13] = true;
+}
+
+
+
+
 const uint64_t &Chapter::getValueOfUpdate() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
@@ -998,7 +1067,7 @@ const std::shared_ptr<uint64_t> &Chapter::getUpdate() const noexcept
 void Chapter::setUpdate(const uint64_t &pUpdate) noexcept
 {
     update_ = std::make_shared<uint64_t>(pUpdate);
-    dirtyFlag_[13] = true;
+    dirtyFlag_[14] = true;
 }
 
 
@@ -1024,6 +1093,7 @@ const std::vector<std::string> &Chapter::insertColumns() noexcept
         "group_id",
         "date_added",
         "ipfs_link",
+        "global_id",
         "update"
     };
     return inCols;
@@ -1165,6 +1235,17 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[13])
     {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[14])
+    {
         if(getUpdate())
         {
             binder << getValueOfUpdate();
@@ -1230,6 +1311,10 @@ const std::vector<std::string> Chapter::updateColumns() const
     if(dirtyFlag_[13])
     {
         ret.push_back(getColumnName(13));
+    }
+    if(dirtyFlag_[14])
+    {
+        ret.push_back(getColumnName(14));
     }
     return ret;
 }
@@ -1370,6 +1455,17 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[13])
     {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[14])
+    {
         if(getUpdate())
         {
             binder << getValueOfUpdate();
@@ -1487,6 +1583,14 @@ Json::Value Chapter::toJson() const
     {
         ret["ipfs_link"]=Json::Value();
     }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
+    }
     if(getUpdate())
     {
         ret["update"]=(Json::UInt64)getValueOfUpdate();
@@ -1502,7 +1606,7 @@ Json::Value Chapter::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 14)
+    if(pMasqueradingVector.size() == 15)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -1649,13 +1753,24 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[13].empty())
         {
-            if(getUpdate())
+            if(getGlobalId())
             {
-                ret[pMasqueradingVector[13]]=(Json::UInt64)getValueOfUpdate();
+                ret[pMasqueradingVector[13]]=getValueOfGlobalId();
             }
             else
             {
                 ret[pMasqueradingVector[13]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[14].empty())
+        {
+            if(getUpdate())
+            {
+                ret[pMasqueradingVector[14]]=(Json::UInt64)getValueOfUpdate();
+            }
+            else
+            {
+                ret[pMasqueradingVector[14]]=Json::Value();
             }
         }
         return ret;
@@ -1764,6 +1879,14 @@ Json::Value Chapter::toMasqueradedJson(
     else
     {
         ret["ipfs_link"]=Json::Value();
+    }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
     }
     if(getUpdate())
     {
@@ -1883,9 +2006,14 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
         err="The ipfs_link column cannot be null";
         return false;
     }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(13, "global_id", pJson["global_id"], err, true))
+            return false;
+    }
     if(pJson.isMember("update"))
     {
-        if(!validJsonOfField(13, "update", pJson["update"], err, true))
+        if(!validJsonOfField(14, "update", pJson["update"], err, true))
             return false;
     }
     return true;
@@ -1894,7 +2022,7 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                  const std::vector<std::string> &pMasqueradingVector,
                                                  std::string &err)
 {
-    if(pMasqueradingVector.size() != 14)
+    if(pMasqueradingVector.size() != 15)
     {
         err = "Bad masquerading vector";
         return false;
@@ -2052,6 +2180,14 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                   return false;
           }
       }
+      if(!pMasqueradingVector[14].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[14]))
+          {
+              if(!validJsonOfField(14, pMasqueradingVector[14], pJson[pMasqueradingVector[14]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e) 
     {
@@ -2132,9 +2268,14 @@ bool Chapter::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(12, "ipfs_link", pJson["ipfs_link"], err, false))
             return false;
     }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(13, "global_id", pJson["global_id"], err, false))
+            return false;
+    }
     if(pJson.isMember("update"))
     {
-        if(!validJsonOfField(13, "update", pJson["update"], err, false))
+        if(!validJsonOfField(14, "update", pJson["update"], err, false))
             return false;
     }
     return true;
@@ -2143,7 +2284,7 @@ bool Chapter::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                const std::vector<std::string> &pMasqueradingVector,
                                                std::string &err)
 {
-    if(pMasqueradingVector.size() != 14)
+    if(pMasqueradingVector.size() != 15)
     {
         err = "Bad masquerading vector";
         return false;
@@ -2222,6 +2363,11 @@ bool Chapter::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[13].empty() && pJson.isMember(pMasqueradingVector[13]))
       {
           if(!validJsonOfField(13, pMasqueradingVector[13], pJson[pMasqueradingVector[13]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+      {
+          if(!validJsonOfField(14, pMasqueradingVector[14], pJson[pMasqueradingVector[14]], err, false))
               return false;
       }
     }
@@ -2398,6 +2544,18 @@ bool Chapter::validJsonOfField(size_t index,
             }
             break;
         case 13:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;                
+            }
+            break;
+        case 14:
             if(pJson.isNull())
             {
                 err="The " + fieldName + " column cannot be null";

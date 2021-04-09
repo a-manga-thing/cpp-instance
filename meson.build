@@ -33,8 +33,11 @@ inc = [
 src = [
     'src/Main.cc',
     'src/Util.cc',
+    'src/Globals.cc',
+    'controllers/ChapterSync.cc',
+    'controllers/MangaSync.cc',
     'controllers/MangaCtrl.cc',
-    'controllers/MangaSyncCtrl.cc',
+    'controllers/SyncCtrl.cc',
     'models/Artist.cc',
     'models/Chapter.cc',
     'models/MangaTag.cc',
@@ -43,7 +46,6 @@ src = [
     'models/Manga.cc',
     'models/Person.cc',
     'models/Title.cc',
-    'models/Followers.cc',
     'models/GlobalState.cc',
 ]
 

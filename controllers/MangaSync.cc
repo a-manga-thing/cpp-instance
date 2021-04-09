@@ -1,4 +1,4 @@
-#include "MangaCtrl.h"
+#include "SyncCtrl.h"
 #include "Chapter.h"
 #include "Title.h"
 #include "Person.h"
@@ -26,7 +26,7 @@ static T getOrCreate(orm::DbClientPtr dbClientPtr, CSR name)
     }
 }
 
-void MangaCtrl::addTitle(CSR name, const Manga& manga)
+void SyncCtrl::addTitle(CSR name, const Manga& manga)
 {
     Title title;
     title.setName(name);
@@ -36,7 +36,7 @@ void MangaCtrl::addTitle(CSR name, const Manga& manga)
 }
 
 #define ADDRELFUNC(Type, Relation) \
-void MangaCtrl::add##Relation(CSR name, const Manga& manga) \
+void SyncCtrl::add##Relation(CSR name, const Manga& manga) \
 { \
     Type object = getOrCreate< Type >(getDbClient(), name); \
     Relation relation; \
@@ -51,7 +51,7 @@ ADDRELFUNC(Person, Artist)
 ADDRELFUNC(Tag, MangaTag)
 
 #define ADDRELSFUNC(Type, Array) \
-void MangaCtrl::add##Type##s(CJR json, const Manga& manga) \
+void SyncCtrl::add##Type##s(CJR json, const Manga& manga) \
 { \
     if (json.isMember(#Array)) { \
         auto& array = json[#Array]; \
@@ -66,7 +66,7 @@ ADDRELSFUNC(Artist, artists)
 ADDRELSFUNC(MangaTag, tags)
 
 #define REMOVERELSFUNC(Type) \
-void MangaCtrl::remove##Type##s(const Manga& manga) \
+void SyncCtrl::remove##Type##s(const Manga& manga) \
 { \
     removeRelation< Type >(manga); \
 }
@@ -77,7 +77,7 @@ REMOVERELSFUNC(Artist)
 REMOVERELSFUNC(MangaTag)
 
 #define UPDATERELSFUNC(Type) \
-void MangaCtrl::update##Type##s(CJR json, const Manga& manga) \
+void SyncCtrl::update##Type##s(CJR json, const Manga& manga) \
 { \
     remove##Type##s(manga); \
     add##Type##s(json, manga); \
@@ -88,54 +88,27 @@ UPDATERELSFUNC(Author)
 UPDATERELSFUNC(Artist)
 UPDATERELSFUNC(MangaTag)
 
-static void badRequest(HttpCallback& callback, CSR err)
-{
-    Json::Value ret;
-    ret["error"]=err;
-    auto resp= HttpResponse::newHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-}
-
-bool MangaCtrl::validate(CJPR jsonPtr, HttpCallback& callback)
-{
-    std::string err;
-    
-    if(!jsonPtr) {
-        badRequest(callback, "No json object is found in the request");
-        return false;
-    }
-    
-    if(!doCustomValidations(*jsonPtr, err)) {  //TODO: add json validator
-        badRequest(callback, err);  //for globalKey
-        return false;
-    }
-    
-    return true;
-}
-
-void MangaCtrl::add(const HttpRequestPtr& req, HttpCallback&& callback)
+void SyncCtrl::addManga(HttpCallback&& callback, CJR json)
 {
     Manga manga;
     std::string err;
-    auto jsonPtr=req->jsonObject();
-    if(!validate(jsonPtr, callback)) return;
     
-    if(!Manga::validateMasqueradedJsonForCreation(*jsonPtr, masqueradingVector(), err)) {
+    if(!Manga::validateJsonForCreation(json, err)) {
         badRequest(callback, err);
         return;
     }
     
-    if(getByGlobalKey(jsonPtr, manga)) {
+    if(getByGlobalKey(json, manga)) {
         badRequest(callback, "Bad global key");
         return;
     }
     
     drogon::orm::Mapper<Manga> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.insert(
-        Manga(*jsonPtr),
+        Manga(json),
         [callbackPtr, jsonPtr, this](Manga manga)
         {
             addTitles(*jsonPtr, manga);
@@ -159,13 +132,11 @@ void MangaCtrl::add(const HttpRequestPtr& req, HttpCallback&& callback)
     );
 }
 
-void MangaCtrl::remove(const HttpRequestPtr& req, HttpCallback&& callback)
+void SyncCtrl::removeManga(HttpCallback&& callback, CJR json)
 {
     Manga manga;
-    auto jsonPtr=req->jsonObject();
-    if(!validate(jsonPtr, callback)) return;
     
-    if(!getByGlobalKey(jsonPtr, manga)) {
+    if(!getByGlobalKey(json, manga)) {
         badRequest(callback, "Bad global key");
         return;
     }
@@ -199,25 +170,23 @@ void MangaCtrl::remove(const HttpRequestPtr& req, HttpCallback&& callback)
     );
 };
 
-void MangaCtrl::update(const HttpRequestPtr& req, HttpCallback&& callback)
+void SyncCtrl::updateManga(HttpCallback&& callback, CJR json)
 {
     Manga manga;
     std::string err;
-    auto jsonPtr=req->jsonObject();
-    if(!validate(jsonPtr, callback)) return;
     
-    if(!Manga::validateMasqueradedJsonForUpdate(*jsonPtr, masqueradingVector(), err)) {
+    if(!Manga::validateJsonForUpdate(json, err)) {
         badRequest(callback, err);
         return;
     }
     
-    if(!getByGlobalKey(jsonPtr, manga)) {
+    if(!getByGlobalKey(json, manga)) {
         badRequest(callback, "Bad global key");
         return;
     }
     
     try {
-        manga.updateByMasqueradedJson(*jsonPtr, masqueradingVector());
+        manga.updateByJson(json);
     } catch (const Json::Exception &e) {
         badRequest(callback, "Field type error");
         return;
@@ -225,6 +194,7 @@ void MangaCtrl::update(const HttpRequestPtr& req, HttpCallback&& callback)
     
     drogon::orm::Mapper<Manga> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.update(
         manga,

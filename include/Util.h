@@ -2,6 +2,7 @@
 
 #include "Types.h"
 #include <vector>
+#include <utility>
 #include <drogon/drogon.h>
 
 bool makeThumbnail(CSR name, const drogon::HttpFile& httpFile);
@@ -15,3 +16,12 @@ void splitCSV (
 );
 
 std::string joinVec(const std::vector<std::string>& vec);
+
+void badRequest (
+    HttpCallback& callback,
+    CSR err,
+    drogon::HttpStatusCode code = drogon::k400BadRequest
+);
+
+std::string desencrypt (CSR str);
+std::pair<std::string, std::string> makeKeyPair();

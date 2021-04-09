@@ -98,3 +98,22 @@ std::string joinVec(const std::vector<std::string>& vec)
     }
     return ss.str();
 }
+
+void badRequest(HttpCallback& callback, CSR err, drogon::HttpStatusCode code)
+{
+    Json::Value ret;
+    ret["error"]=err;
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(code);
+    callback(resp);
+}
+
+std::string desencrypt (CSR str)
+{
+    
+}
+
+std::pair<std::string, std::string> makeKeyPair()
+{
+    
+}

@@ -54,6 +54,7 @@ class Chapter
         static const std::string _group_id;
         static const std::string _date_added;
         static const std::string _ipfs_link;
+        static const std::string _global_id;
         static const std::string _update;
     };
 
@@ -245,6 +246,17 @@ class Chapter
     void setIpfsLink(std::string &&pIpfsLink) noexcept;
 
 
+    /**  For column global_id  */
+    ///Get the value of the column global_id, returns the default value if the column is null
+    const std::string &getValueOfGlobalId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getGlobalId() const noexcept;
+
+    ///Set the value of the column global_id
+    void setGlobalId(const std::string &pGlobalId) noexcept;
+    void setGlobalId(std::string &&pGlobalId) noexcept;
+
+
     /**  For column update  */
     ///Get the value of the column update, returns the default value if the column is null
     const uint64_t &getValueOfUpdate() const noexcept;
@@ -256,7 +268,7 @@ class Chapter
 
 
 
-    static size_t getColumnNumber() noexcept {  return 14;  }
+    static size_t getColumnNumber() noexcept {  return 15;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -286,6 +298,7 @@ class Chapter
     std::shared_ptr<uint64_t> groupId_;
     std::shared_ptr<uint64_t> dateAdded_;
     std::shared_ptr<std::string> ipfsLink_;
+    std::shared_ptr<std::string> globalId_;
     std::shared_ptr<uint64_t> update_;
     struct MetaData
     {
@@ -298,7 +311,7 @@ class Chapter
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[14]={ false };
+    bool dirtyFlag_[15]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -378,10 +391,19 @@ class Chapter
         }
         if(dirtyFlag_[13])
         {
-            sql += "update,";
+            sql += "global_id,";
             ++parametersCount;
         }
         if(!dirtyFlag_[13])
+        {
+            needSelection=true;
+        }
+        if(dirtyFlag_[14])
+        {
+            sql += "update,";
+            ++parametersCount;
+        }
+        if(!dirtyFlag_[14])
         {
             needSelection=true;
         }
@@ -454,6 +476,11 @@ class Chapter
 
         } 
         if(dirtyFlag_[13])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[14])
         {
             sql.append("?,");
 
