@@ -6,7 +6,7 @@ C++ Implementation of [Mangaloid](https://github.com/a-manga-thing/documentation
 
 To compile this instance, you will need the [Drogon](https://github.com/an-tao/drogon) HTTP application framework. You will also need its [dependency libraries](https://github.com/an-tao/drogon/wiki/ENG-02-Installation#Library-Dependencies).
 
-Furthermore, you need the Meson build system, the MagickWand ImageMagick C API, and the [fmt](https://github.com/fmtlib/fmt) C++20 formatting library.
+Furthermore, you need the Meson build system, CMake, the MagickWand ImageMagick C API, Botan, and the [fmt](https://github.com/fmtlib/fmt) C++20 formatting library.
 
 ## Setup
 
