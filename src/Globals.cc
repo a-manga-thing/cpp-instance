@@ -26,9 +26,17 @@ bool Globals::inTryFollow(CSR str)
     return ret;
 }
 
+const Instance& Globals::getFollowing(CSR id)
+{
+    followingMutex.lock_shared();
+    const auto& ret = following[id];
+    followingMutex.unlock_shared();
+    return ret;
+}
+
 const Instance& Globals::addFollower(CSR publicKey, CSR id)
 {
-    Instance temp = {id, publicKey, ""};
+    Instance temp = {id, "", publicKey, ""};
     followersMutex.lock();
     followers.emplace(std::make_pair(temp.url, temp));
     followersMutex.unlock();
@@ -36,8 +44,8 @@ const Instance& Globals::addFollower(CSR publicKey, CSR id)
 
 const Instance& Globals::addFollowing(CSR id)
 {
-    auto keyPair = makeKeyPair();
-    Instance temp = {id, keyPair.first, keyPair.second};
+    auto tuple = makeKeyPair(id);
+    Instance temp = {id, std::get<2>(tuple), std::get<1>(tuple), std::get<0>(tuple)};
     followingMutex.lock();
     following.emplace(std::make_pair(temp.url, temp));
     followingMutex.unlock();

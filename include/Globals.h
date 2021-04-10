@@ -22,6 +22,8 @@ public:
     bool inFollowing(CSR str);
     bool inTryFollow(CSR str);
     
+    const Instance& getFollowing(CSR id);
+    
     const Instance& addFollower(CSR publicKey, CSR id);
     const Instance& addFollowing(CSR id);
 };

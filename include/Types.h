@@ -10,6 +10,7 @@ using CSR = const std::string&;  //const string ref
 
 struct Instance {
     std::string url;
+    std::string pass;
     std::string publicKey;
     std::string privateKey;
 };

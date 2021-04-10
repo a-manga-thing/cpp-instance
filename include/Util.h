@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.h"
+#include <tuple>
 #include <vector>
 #include <utility>
 #include <drogon/drogon.h>
@@ -23,5 +24,6 @@ void badRequest (
     drogon::HttpStatusCode code = drogon::k400BadRequest
 );
 
-std::string desencrypt (CSR str);
-std::pair<std::string, std::string> makeKeyPair();
+std::string decrypt (CSR str, CSR key, CSR pass);
+std::string encrypt (CSR id, CSR str, CSR pub);
+std::tuple<std::string, std::string, std::string> makeKeyPair(CSR str);

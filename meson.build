@@ -6,8 +6,12 @@ add_project_arguments(['--std=c++2a'], language : 'cpp')
 add_project_link_arguments(['--std=c++2a'], language : 'cpp')
 
 cmake = import('cmake')
+
 #ipfs_proj = cmake.subproject('cpp-ipfs-http-client')
 #ipfs_lib = ipfs_proj.dependency('ipfs-http-client')
+
+rnp_proj = cmake.subproject('rnp')
+rnp_lib = rnp_proj.dependency('librnp')
 
 dep = [
     cc.find_library('z'),
@@ -21,6 +25,8 @@ dep = [
     dependency('Drogon'),
     dependency('uuid'),
     dependency('fmt'),
+    dependency('gpgme'),
+    rnp_lib,
 #    ipfs_lib,
 ]
 
@@ -33,6 +39,7 @@ inc = [
 src = [
     'src/Main.cc',
     'src/Util.cc',
+    'src/UtilPGP.cc',
     'src/Globals.cc',
     'controllers/ChapterSync.cc',
     'controllers/MangaSync.cc',

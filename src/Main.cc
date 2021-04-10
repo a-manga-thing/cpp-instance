@@ -1,6 +1,7 @@
 //#include <ipfs/client.h>
 #include <drogon/drogon.h>
 #include "Globals.h"
+#include "Util.h"
 
 Globals globals;
 

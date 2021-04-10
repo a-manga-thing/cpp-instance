@@ -104,12 +104,19 @@ void SyncCtrl::push(const HttpRequestPtr& req, HttpCallback&& callback)
     auto action = (*jsonPtr)["action"].asString();
     auto type = (*jsonPtr)["item_type"].asString();
     auto instance = (*jsonPtr)["instance"].asString();
-    auto payload = desencrypt((*jsonPtr)["payload"].asString());
     
-    if (!globals.inFollowing(instance))
+    if (!globals.inFollowing(instance)) {
         badRequest(callback, "Not subscribed", k403Forbidden);
+        return;
+    }
     
-    else if (type == "Manga") {
+    auto payload = decrypt(
+        (*jsonPtr)["payload"].asString()
+        , globals.getFollowing(instance).privateKey
+        , globals.getFollowing(instance).pass
+    );
+    
+    if (type == "Manga") {
         if (action == "Create") addManga(std::move(callback), payload);
         else if (action == "Modify") updateManga(std::move(callback), payload);
         else if (action == "Delete") removeManga(std::move(callback), payload);

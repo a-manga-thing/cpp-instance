@@ -1,5 +1,7 @@
 #include "Util.h"
 
+#include <rnp/rnp.h>
+#include <fmt/core.h>
 #include <ImageMagick-7/MagickWand/MagickWand.h>
 
 struct Rect
@@ -106,14 +108,4 @@ void badRequest(HttpCallback& callback, CSR err, drogon::HttpStatusCode code)
     auto resp = drogon::HttpResponse::newHttpJsonResponse(ret);
     resp->setStatusCode(code);
     callback(resp);
-}
-
-std::string desencrypt (CSR str)
-{
-    
-}
-
-std::pair<std::string, std::string> makeKeyPair()
-{
-    
 }
