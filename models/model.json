@@ -9,6 +9,7 @@
     
     "tables":[
         "global_state",
+        "user",
         "manga",
         "title",
         "tag",

@@ -1,4 +1,4 @@
-#include "SyncCtrl.h"
+#include "BaseCtrl.h"
 #include "Chapter.h"
 #include "Title.h"
 #include "Person.h"
@@ -7,6 +7,7 @@
 #include "MangaTag.h"
 #include "Tag.h"
 #include "Util.h"
+#include "Globals.h"
 #include <fmt/core.h>
 #include <sstream>
 #include <string>
@@ -26,7 +27,7 @@ static T getOrCreate(orm::DbClientPtr dbClientPtr, CSR name)
     }
 }
 
-void SyncCtrl::addTitle(CSR name, const Manga& manga)
+void BaseCtrl::addTitle(CSR name, const Manga& manga)
 {
     Title title;
     title.setName(name);
@@ -36,7 +37,7 @@ void SyncCtrl::addTitle(CSR name, const Manga& manga)
 }
 
 #define ADDRELFUNC(Type, Relation) \
-void SyncCtrl::add##Relation(CSR name, const Manga& manga) \
+void BaseCtrl::add##Relation(CSR name, const Manga& manga) \
 { \
     Type object = getOrCreate< Type >(getDbClient(), name); \
     Relation relation; \
@@ -51,7 +52,7 @@ ADDRELFUNC(Person, Artist)
 ADDRELFUNC(Tag, MangaTag)
 
 #define ADDRELSFUNC(Type, Array) \
-void SyncCtrl::add##Type##s(CJR json, const Manga& manga) \
+void BaseCtrl::add##Type##s(CJR json, const Manga& manga) \
 { \
     if (json.isMember(#Array)) { \
         auto& array = json[#Array]; \
@@ -66,7 +67,7 @@ ADDRELSFUNC(Artist, artists)
 ADDRELSFUNC(MangaTag, tags)
 
 #define REMOVERELSFUNC(Type) \
-void SyncCtrl::remove##Type##s(const Manga& manga) \
+void BaseCtrl::remove##Type##s(const Manga& manga) \
 { \
     removeRelation< Type >(manga); \
 }
@@ -77,7 +78,7 @@ REMOVERELSFUNC(Artist)
 REMOVERELSFUNC(MangaTag)
 
 #define UPDATERELSFUNC(Type) \
-void SyncCtrl::update##Type##s(CJR json, const Manga& manga) \
+void BaseCtrl::update##Type##s(CJR json, const Manga& manga) \
 { \
     remove##Type##s(manga); \
     add##Type##s(json, manga); \
@@ -88,7 +89,7 @@ UPDATERELSFUNC(Author)
 UPDATERELSFUNC(Artist)
 UPDATERELSFUNC(MangaTag)
 
-void SyncCtrl::addManga(HttpCallback&& callback, CJR json)
+void BaseCtrl::addManga(HttpCallback&& callback, CJR json, bool local)
 {
     Manga manga;
     std::string err;
@@ -98,8 +99,11 @@ void SyncCtrl::addManga(HttpCallback&& callback, CJR json)
         return;
     }
     
-    if(getByGlobalKey(json, manga)) {
-        badRequest(callback, "Bad global key");
+    if (
+        (!local && getByGlobalKey(json, manga))
+        || (local && getById(json, manga))
+    ) {
+        badRequest(callback, "Bad key");
         return;
     }
     
@@ -107,14 +111,16 @@ void SyncCtrl::addManga(HttpCallback&& callback, CJR json)
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
     auto jsonPtr = std::make_shared<Json::Value>(json);
     
-    mapper.insert(
+    mapper.insert (
         Manga(json),
-        [callbackPtr, jsonPtr, this](Manga manga)
+        [callbackPtr, jsonPtr, local, this](Manga manga)
         {
             addTitles(*jsonPtr, manga);
             addAuthors(*jsonPtr, manga);
             addArtists(*jsonPtr, manga);
             addMangaTags(*jsonPtr, manga);
+            
+            if (local) addGlobalId(manga);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -132,12 +138,15 @@ void SyncCtrl::addManga(HttpCallback&& callback, CJR json)
     );
 }
 
-void SyncCtrl::removeManga(HttpCallback&& callback, CJR json)
+void BaseCtrl::removeManga(HttpCallback&& callback, CJR json, bool local)
 {
     Manga manga;
     
-    if(!getByGlobalKey(json, manga)) {
-        badRequest(callback, "Bad global key");
+    if (
+        (!local && getByGlobalKey(json, manga))
+        || (local && getById(json, manga))
+    ) {
+        badRequest(callback, "Bad key");
         return;
     }
     
@@ -147,12 +156,14 @@ void SyncCtrl::removeManga(HttpCallback&& callback, CJR json)
     
     mapper.deleteBy(
         c,
-        [callbackPtr, manga, this](const std::size_t count)
+        [callbackPtr, manga, local, this](const std::size_t count)
         {
             removeTitles(manga);
             removeAuthors(manga);
             removeArtists(manga);
             removeMangaTags(manga);
+            
+            if(local) propagate("Delete", manga);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -170,7 +181,7 @@ void SyncCtrl::removeManga(HttpCallback&& callback, CJR json)
     );
 };
 
-void SyncCtrl::updateManga(HttpCallback&& callback, CJR json)
+void BaseCtrl::updateManga(HttpCallback&& callback, CJR json, bool local)
 {
     Manga manga;
     std::string err;
@@ -180,8 +191,11 @@ void SyncCtrl::updateManga(HttpCallback&& callback, CJR json)
         return;
     }
     
-    if(!getByGlobalKey(json, manga)) {
-        badRequest(callback, "Bad global key");
+    if (
+        (!local && !getByGlobalKey(json, manga))
+        || (local && !getById(json, manga))
+    ) {
+        badRequest(callback, "Bad key");
         return;
     }
     
@@ -198,12 +212,14 @@ void SyncCtrl::updateManga(HttpCallback&& callback, CJR json)
     
     mapper.update(
         manga,
-        [callbackPtr, jsonPtr, manga, this](const std::size_t count)
+        [callbackPtr, jsonPtr, manga, local, this](const std::size_t count)
         {
             updateTitles(*jsonPtr, manga);
             updateAuthors(*jsonPtr, manga);
             updateArtists(*jsonPtr, manga);
             updateMangaTags(*jsonPtr, manga);
+            
+            if(local) propagate("Update", manga);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -217,6 +233,41 @@ void SyncCtrl::updateManga(HttpCallback&& callback, CJR json)
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
+        }
+    );
+}
+
+static void sendPushReq(const HttpRequestPtr& req, Instance instance)
+{
+    auto client = HttpClient::newHttpClient(instance.url);
+    client->sendRequest(
+        req,
+        [instance]
+        (ReqResult result, const HttpResponsePtr& response) {
+            if (result != ReqResult::Ok)
+                globals.removeFollower(instance.url);
+        },
+        30.0  //TODO: use config values
+    );
+}
+
+void BaseCtrl::propagate(CSR action, const Manga& manga)
+{
+    auto r = HttpRequest::newHttpRequest();
+    r->setMethod(drogon::Get);
+    r->setPath(fmt::format("/sync/accept?address={}", globals.instance.url));
+    
+    auto mangaJson = mangaToJson(getDbClient(), manga);
+    Json::Value json;
+    json["action"] = action;
+    json["item_type"] = "Manga";
+    json["instance"] = globals.instance.url;
+    
+    globals.forAllFollowers (
+        [&](const Instance& itr) {
+            json["payload"] = encrypt(itr.url, mangaJson.toStyledString(), itr.publicKey);
+            r->setBody(json.toStyledString());
+            sendPushReq(r, itr);
         }
     );
 }

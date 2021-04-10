@@ -50,3 +50,18 @@ const Instance& Globals::addFollowing(CSR id)
     following.emplace(std::make_pair(temp.url, temp));
     followingMutex.unlock();
 }
+
+void Globals::removeFollower(CSR key)
+{
+    followersMutex.lock();
+    if (followers.contains(key))
+        followers.erase(key);
+    followersMutex.unlock();
+}
+
+void Globals::forAllFollowers(std::function<void(const Instance&)> f)
+{
+    tryFollowMutex.lock_shared();
+    for (auto& itr : followers) f(itr.second);
+    tryFollowMutex.unlock_shared();
+}

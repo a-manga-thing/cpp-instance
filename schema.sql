@@ -2,6 +2,16 @@ CREATE TABLE "global_state" (
     "last_update" INTEGER  --unix timestamp
 );
 
+CREATE TABLE "user" (
+    "name" STRING NOT NULL,
+    "pass" STRING NOT NULL,  --hash(<real_pass><salt>)
+    "salt" STRING NOT NULL,
+    PRIMARY KEY("name")
+);
+
+INSERT INTO "user" ("name", "pass", "salt") VALUES
+("root", "4a1b39fce8a333a215886ad6df812b85", "SALT");  --root:pass
+
 CREATE TABLE "manga" (
     "id" INTEGER NOT NULL,
     "type" INTEGER NOT NULL,

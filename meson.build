@@ -40,11 +40,14 @@ src = [
     'src/Main.cc',
     'src/Util.cc',
     'src/UtilPGP.cc',
+    'src/UtilManga.cc',
     'src/Globals.cc',
     'controllers/ChapterSync.cc',
     'controllers/MangaSync.cc',
     'controllers/MangaCtrl.cc',
     'controllers/SyncCtrl.cc',
+    'controllers/BaseCtrl.cc',
+    'controllers/UserCtrl.cc',
     'models/Artist.cc',
     'models/Chapter.cc',
     'models/MangaTag.cc',
@@ -54,6 +57,7 @@ src = [
     'models/Person.cc',
     'models/Title.cc',
     'models/GlobalState.cc',
+    'models/User.cc',
 ]
 
 executable('instance', sources : src, dependencies : dep, include_directories : inc)

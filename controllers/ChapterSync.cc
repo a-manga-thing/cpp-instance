@@ -1,11 +1,12 @@
-#include "SyncCtrl.h"
+#include "BaseCtrl.h"
 #include "Chapter.h"
 #include "Util.h"
+#include "Globals.h"
 #include <fmt/core.h>
 #include <sstream>
 #include <string>
 
-void SyncCtrl::addChapter(HttpCallback&& callback, CJR json)
+void BaseCtrl::addChapter(HttpCallback&& callback, CJR json, bool local)
 {  //TODO: map global_manga_id to local manga_id
     Chapter chapter;
     std::string err;
@@ -43,7 +44,7 @@ void SyncCtrl::addChapter(HttpCallback&& callback, CJR json)
     );
 }
 
-void SyncCtrl::removeChapter(HttpCallback&& callback, CJR json)
+void BaseCtrl::removeChapter(HttpCallback&& callback, CJR json, bool local)
 {
     Chapter chapter;
     
@@ -76,7 +77,7 @@ void SyncCtrl::removeChapter(HttpCallback&& callback, CJR json)
     );
 };
 
-void SyncCtrl::updateChapter(HttpCallback&& callback, CJR json)
+void BaseCtrl::updateChapter(HttpCallback&& callback, CJR json, bool local)
 {  //TODO: mask manga_id and manga_global_id
     Chapter chapter;
     std::string err;
@@ -117,6 +118,41 @@ void SyncCtrl::updateChapter(HttpCallback&& callback, CJR json)
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
+        }
+    );
+}
+
+static void sendPushReq(const HttpRequestPtr& req, Instance instance)
+{
+    auto client = HttpClient::newHttpClient(instance.url);
+    client->sendRequest(
+        req,
+        [instance]
+        (ReqResult result, const HttpResponsePtr& response) {
+            if (result != ReqResult::Ok)
+                globals.removeFollower(instance.url);
+        },
+        30.0  //TODO: use config values
+    );
+}
+
+void BaseCtrl::propagate(CSR action, const Chapter& chapter)
+{
+    auto r = HttpRequest::newHttpRequest();
+    r->setMethod(drogon::Get);
+    r->setPath(fmt::format("/sync/accept?address={}", globals.instance.url));
+    
+    auto chapterJson = chapter.toJson();
+    Json::Value json;
+    json["action"] = action;
+    json["item_type"] = "Chapter";
+    json["instance"] = globals.instance.url;
+    
+    globals.forAllFollowers (
+        [&](const Instance& itr) {
+            json["payload"] = encrypt(itr.url, chapterJson.toStyledString(), itr.publicKey);
+            r->setBody(json.toStyledString());
+            sendPushReq(r, itr);
         }
     );
 }

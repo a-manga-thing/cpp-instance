@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.h"
+#include <functional>
 #include <unordered_map>
 #include <unordered_set>
 #include <shared_mutex>
@@ -26,6 +27,10 @@ public:
     
     const Instance& addFollower(CSR publicKey, CSR id);
     const Instance& addFollowing(CSR id);
+    
+    void removeFollower(CSR key);
+    
+    void forAllFollowers(std::function<void(const Instance&)> f);
 };
 
 extern Globals globals;

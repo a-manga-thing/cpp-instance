@@ -67,35 +67,7 @@ re: ss << ";";
     return ss.str();
 }
 
-#define GENERICQUERY(Type) "SELECT "#Type".name FROM "#Type" WHERE ("#Type".manga_id = {});"
-
-#define GETSIMPLEREL(Type) { \
-auto query = fmt::format(GENERICQUERY(Type), manga.getValueOfId()); \
-auto result = dbClientPtr->execSqlSync(query); \
-for (auto& row : result) ret[ #Type"s" ].append(row.begin()->as<std::string>()); \
-}
-
-#define COMPLEXQUERY(Type, Relation, IdField) "SELECT "#Type".name FROM "#Type" INNER JOIN "#Relation" ON "#Type".id = "#Relation"."#IdField" WHERE ("#Relation".manga_id = {});"
-
-#define GETCOMPLEXREL(Type, Relation, IdField, Label) { \
-auto query = fmt::format(COMPLEXQUERY(Type, Relation, IdField), manga.getValueOfId()); \
-auto result = dbClientPtr->execSqlSync(query); \
-for (auto& row : result) ret[ Label ].append(row.begin()->as<std::string>()); \
-}
-
-static Json::Value mangaToJson(orm::DbClientPtr dbClientPtr, const Manga& manga)
-{
-    auto ret = manga.toJson();
-    
-    GETSIMPLEREL(title)
-    GETCOMPLEXREL(person, author, person_id, "authors")
-    GETCOMPLEXREL(person, artist, person_id, "artists")
-    GETCOMPLEXREL(tag, manga_tag, tag_id, "tags")
-    
-    return ret;
-}
-
-void MangaCtrl::getSearch (
+void MangaCtrl::search (
     const HttpRequestPtr& req,
     HttpCallback&& callback,
     CSR title,
@@ -119,7 +91,7 @@ void MangaCtrl::getSearch (
     callback(HttpResponse::newHttpJsonResponse(ret));
 }
 
-void MangaCtrl::getFromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
+void MangaCtrl::fromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
 {
     static constexpr auto query = "SELECT * FROM manga WHERE id = {};";
     
@@ -137,7 +109,7 @@ void MangaCtrl::getFromId(const HttpRequestPtr& req, HttpCallback&& callback, lo
     
 }
 
-void MangaCtrl::getChapter(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid, int ordinal)
+void MangaCtrl::chapter(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid, int ordinal)
 {
     auto dbClientPtr = getDbClient();
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
@@ -160,7 +132,7 @@ void MangaCtrl::getChapter(const HttpRequestPtr& req, HttpCallback&& callback, l
         });
 }
 
-void MangaCtrl::getThumbnail(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid)
+void MangaCtrl::thumbnail(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid)
 {
     //manga = ...
     //if (!fs::file_exists(...)) make_thumbnail(...);
