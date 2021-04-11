@@ -25,8 +25,10 @@ void UserCtrl::login(const HttpRequestPtr& req, HttpCallback&& callback)
             if (md5(pass+user.getValueOfSalt()) == user.getValueOfPass()) {
                 sessionPtr->insert("user", user);
                 json["message"] = fmt::format("logged in as {}", name);
+                code = k200OK;
             } else {
                 json["message"] = fmt::format("wrong password");
+                code = k403Forbidden;
             }
             
             auto resp = HttpResponse::newHttpJsonResponse(json);
