@@ -215,4 +215,8 @@
         //reuse_port: Defaults to false, users can run multiple processes listening on the same port at the same time.
         "reuse_port": false
     },
+    //custom_config: custom configuration for users. This object can be get by the app().getCustomConfig() method. 
+    "custom_config": {
+        "instance": "test1.test"
+    }
 }
