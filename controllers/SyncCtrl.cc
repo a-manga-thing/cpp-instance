@@ -10,26 +10,18 @@ static std::pair<HttpStatusCode, Json::Value> genResponseData (
 ) {
     Json::Value json;
     HttpStatusCode code;
-    auto jsonPtr = response->jsonObject();
     
     switch (result) {
-        case ReqResult::Ok:
-            code = k201Created;
-            if (jsonPtr && jsonPtr->isMember("public_key"))
-                globals.addFollower((*jsonPtr)["public_key"].asString(), id);
-            json["message"] = "OK";
-            break;
+        case ReqResult::Ok: {
+                auto jsonPtr = response->jsonObject();
+                code = k201Created;
+                if (jsonPtr && jsonPtr->isMember("public_key"))
+                    globals.addFollower((*jsonPtr)["public_key"].asString(), id);
+                json["message"] = "OK";
+            } break;
         case ReqResult::BadResponse:
             code = k403Forbidden;
-            if (jsonPtr && jsonPtr->isMember("message"))
-                json["message"] =
-                    fmt::format(
-                        "The instance did not accept our subscription: '{}'",
-                        (*jsonPtr)["message"].asString()
-                    );
-            else
-                json["message"] =
-                    "The instance did not accept our subscription";
+            json["message"] = "The instance did not accept our subscription";
             break;
         default:
             code = k400BadRequest;
@@ -42,7 +34,7 @@ static std::pair<HttpStatusCode, Json::Value> genResponseData (
 
 void SyncCtrl::subscribe(const HttpRequestPtr& req, HttpCallback&& callback, CSR id)
 {
-    auto client = HttpClient::newHttpClient(id);
+    auto client = HttpClient::newHttpClient("http://"+id);
     auto r = HttpRequest::newHttpRequest();
     r->setMethod(drogon::Get);
     r->setPath(fmt::format("/sync/accept?address={}", globals.instance.url));
