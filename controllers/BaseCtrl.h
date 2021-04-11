@@ -77,14 +77,16 @@ protected:
     }
 
     template <class T>
-    void addGlobalId(T& object)
+    void addGlobalId(JSP jsonPtr, T& object)
     {
+        Json::Value json = *jsonPtr;
         drogon::orm::Mapper<T> mapper(getDbClient());
         auto id = fmt::format("{}@{}", object.getValueOfId(), globals.instance.url);
         object.setGlobalId(id);
+        json["global_id"] = id;
         mapper.update (
             object,
-            [object, this](const std::size_t size){ propagate("Create", object); },
+            [object, json, this](const std::size_t size){ propagate("Create", "Manga", json); },
             [](const DrogonDbException &e){ LOG_ERROR << e.base().what(); }
         );
     }
@@ -96,20 +98,20 @@ protected:
     void addArtist(CSR artist, const Manga& manga);
     void addMangaTag(CSR tag, const Manga& manga);
     
-    void addTitles(CJR json, const Manga& manga);
-    void addAuthors(CJR json, const Manga& manga);
-    void addArtists(CJR json, const Manga& manga);
-    void addMangaTags(CJR json, const Manga& manga);
+    void addTitles(JSP jsonPtr, const Manga& manga);
+    void addAuthors(JSP jsonPtr, const Manga& manga);
+    void addArtists(JSP jsonPtr, const Manga& manga);
+    void addMangaTags(JSP jsonPtr, const Manga& manga);
     
     void removeTitles(const Manga& manga);
     void removeAuthors(const Manga& manga);
     void removeArtists(const Manga& manga);
     void removeMangaTags(const Manga& manga);
     
-    void updateTitles(CJR json, const Manga& manga);
-    void updateAuthors(CJR json, const Manga& manga);
-    void updateArtists(CJR json, const Manga& manga);
-    void updateMangaTags(CJR json, const Manga& manga);
+    void updateTitles(JSP jsonPtr, const Manga& manga);
+    void updateAuthors(JSP jsonPtr, const Manga& manga);
+    void updateArtists(JSP jsonPtr, const Manga& manga);
+    void updateMangaTags(JSP jsonPtr, const Manga& manga);
     
     void addManga(HttpCallback&& callback, CJR json, bool local = false);
     void updateManga(HttpCallback&& callback, CJR json, bool local = false);
@@ -119,6 +121,5 @@ protected:
     void updateChapter(HttpCallback&& callback, CJR json, bool local = false);
     void removeChapter(HttpCallback&& callback, CJR json, bool local = false);
     
-    void propagate(CSR action, const Manga& manga);
-    void propagate(CSR action, const Chapter& Chapter);
+    void propagate(CSR action, CSR type, CJR payload);
 };

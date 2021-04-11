@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -136,6 +139,9 @@ class User
     /// Relationship interfaces
   private:
     friend Mapper<User>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<User>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;

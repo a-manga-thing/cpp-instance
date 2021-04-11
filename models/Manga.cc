@@ -29,7 +29,7 @@ const std::string Manga::Cols::_mal_id = "mal_id";
 const std::string Manga::Cols::_anilist_id = "anilist_id";
 const std::string Manga::Cols::_mangaupdates_id = "mangaupdates_id";
 const std::string Manga::Cols::_global_id = "global_id";
-const std::string Manga::Cols::_update = "update";
+const std::string Manga::Cols::_last_update = "last_update";
 const std::string Manga::primaryKeyName = "id";
 const bool Manga::hasPrimaryKey = true;
 const std::string Manga::tableName = "manga";
@@ -44,7 +44,7 @@ const std::vector<typename Manga::MetaData> Manga::metaData_={
 {"anilist_id","uint64_t","integer",8,0,0,0},
 {"mangaupdates_id","uint64_t","integer",8,0,0,0},
 {"global_id","std::string","string",0,0,0,1},
-{"update","uint64_t","integer",8,0,0,1}
+{"last_update","uint64_t","integer",8,0,0,1}
 };
 const std::string &Manga::getColumnName(size_t index) noexcept(false)
 {
@@ -91,9 +91,9 @@ Manga::Manga(const Row &r, const ssize_t indexOffset) noexcept
         {
             globalId_=std::make_shared<std::string>(r["global_id"].as<std::string>());
         }
-        if(!r["update"].isNull())
+        if(!r["last_update"].isNull())
         {
-            update_=std::make_shared<uint64_t>(r["update"].as<uint64_t>());
+            lastUpdate_=std::make_shared<uint64_t>(r["last_update"].as<uint64_t>());
         }
     }
     else
@@ -153,7 +153,7 @@ Manga::Manga(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 9;
         if(!r[index].isNull())
         {
-            update_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            lastUpdate_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
     }
 
@@ -245,7 +245,7 @@ Manga::Manga(const Json::Value &pJson, const std::vector<std::string> &pMasquera
         dirtyFlag_[9] = true;
         if(!pJson[pMasqueradingVector[9]].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
         }
     }
 }
@@ -324,12 +324,12 @@ Manga::Manga(const Json::Value &pJson) noexcept(false)
             globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
         }
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("last_update"))
     {
         dirtyFlag_[9]=true;
-        if(!pJson["update"].isNull())
+        if(!pJson["last_update"].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson["last_update"].asUInt64());
         }
     }
 }
@@ -418,7 +418,7 @@ void Manga::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[9] = true;
         if(!pJson[pMasqueradingVector[9]].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
         }
     }
 }
@@ -496,12 +496,12 @@ void Manga::updateByJson(const Json::Value &pJson) noexcept(false)
             globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
         }
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("last_update"))
     {
         dirtyFlag_[9] = true;
-        if(!pJson["update"].isNull())
+        if(!pJson["last_update"].isNull())
         {
-            update_=std::make_shared<uint64_t>((uint64_t)pJson["update"].asUInt64());
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson["last_update"].asUInt64());
         }
     }
 }
@@ -716,20 +716,20 @@ void Manga::setGlobalId(std::string &&pGlobalId) noexcept
 
 
 
-const uint64_t &Manga::getValueOfUpdate() const noexcept
+const uint64_t &Manga::getValueOfLastUpdate() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
-    if(update_)
-        return *update_;
+    if(lastUpdate_)
+        return *lastUpdate_;
     return defaultValue;
 }
-const std::shared_ptr<uint64_t> &Manga::getUpdate() const noexcept
+const std::shared_ptr<uint64_t> &Manga::getLastUpdate() const noexcept
 {
-    return update_;
+    return lastUpdate_;
 }
-void Manga::setUpdate(const uint64_t &pUpdate) noexcept
+void Manga::setLastUpdate(const uint64_t &pLastUpdate) noexcept
 {
-    update_ = std::make_shared<uint64_t>(pUpdate);
+    lastUpdate_ = std::make_shared<uint64_t>(pLastUpdate);
     dirtyFlag_[9] = true;
 }
 
@@ -752,7 +752,7 @@ const std::vector<std::string> &Manga::insertColumns() noexcept
         "anilist_id",
         "mangaupdates_id",
         "global_id",
-        "update"
+        "last_update"
     };
     return inCols;
 }
@@ -849,9 +849,9 @@ void Manga::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[9])
     {
-        if(getUpdate())
+        if(getLastUpdate())
         {
-            binder << getValueOfUpdate();
+            binder << getValueOfLastUpdate();
         }
         else
         {
@@ -994,9 +994,9 @@ void Manga::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[9])
     {
-        if(getUpdate())
+        if(getLastUpdate())
         {
-            binder << getValueOfUpdate();
+            binder << getValueOfLastUpdate();
         }
         else
         {
@@ -1079,13 +1079,13 @@ Json::Value Manga::toJson() const
     {
         ret["global_id"]=Json::Value();
     }
-    if(getUpdate())
+    if(getLastUpdate())
     {
-        ret["update"]=(Json::UInt64)getValueOfUpdate();
+        ret["last_update"]=(Json::UInt64)getValueOfLastUpdate();
     }
     else
     {
-        ret["update"]=Json::Value();
+        ret["last_update"]=Json::Value();
     }
     return ret;
 }
@@ -1197,9 +1197,9 @@ Json::Value Manga::toMasqueradedJson(
         }
         if(!pMasqueradingVector[9].empty())
         {
-            if(getUpdate())
+            if(getLastUpdate())
             {
-                ret[pMasqueradingVector[9]]=(Json::UInt64)getValueOfUpdate();
+                ret[pMasqueradingVector[9]]=(Json::UInt64)getValueOfLastUpdate();
             }
             else
             {
@@ -1281,13 +1281,13 @@ Json::Value Manga::toMasqueradedJson(
     {
         ret["global_id"]=Json::Value();
     }
-    if(getUpdate())
+    if(getLastUpdate())
     {
-        ret["update"]=(Json::UInt64)getValueOfUpdate();
+        ret["last_update"]=(Json::UInt64)getValueOfLastUpdate();
     }
     else
     {
-        ret["update"]=Json::Value();
+        ret["last_update"]=Json::Value();
     }
     return ret;
 }
@@ -1359,9 +1359,9 @@ bool Manga::validateJsonForCreation(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(8, "global_id", pJson["global_id"], err, true))
             return false;
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("last_update"))
     {
-        if(!validJsonOfField(9, "update", pJson["update"], err, true))
+        if(!validJsonOfField(9, "last_update", pJson["last_update"], err, true))
             return false;
     }
     return true;
@@ -1536,9 +1536,9 @@ bool Manga::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(8, "global_id", pJson["global_id"], err, false))
             return false;
     }
-    if(pJson.isMember("update"))
+    if(pJson.isMember("last_update"))
     {
-        if(!validJsonOfField(9, "update", pJson["update"], err, false))
+        if(!validJsonOfField(9, "last_update", pJson["last_update"], err, false))
             return false;
     }
     return true;

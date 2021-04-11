@@ -23,11 +23,14 @@ void BaseCtrl::addChapter(HttpCallback&& callback, CJR json, bool local)
     
     drogon::orm::Mapper<Chapter> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.insert(
         Chapter(json),
-        [callbackPtr, this](Chapter chapter)
+        [callbackPtr, jsonPtr, local, this](Chapter chapter)
         {
+            if(local) addGlobalId(jsonPtr, chapter);
+            
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
             (*callbackPtr)(resp);
@@ -56,11 +59,14 @@ void BaseCtrl::removeChapter(HttpCallback&& callback, CJR json, bool local)
     drogon::orm::Mapper<Chapter> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
     auto c = Criteria(Chapter::Cols::_id,CompareOperator::EQ, chapter.getValueOfId());
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.deleteBy(
         c,
-        [callbackPtr, chapter, this](const std::size_t count)
+        [callbackPtr, jsonPtr, local, chapter, this](const std::size_t count)
         {
+            if (local) propagate("Delete", "Chapter", *jsonPtr);
+            
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
             (*callbackPtr)(resp);
@@ -101,11 +107,14 @@ void BaseCtrl::updateChapter(HttpCallback&& callback, CJR json, bool local)
     
     drogon::orm::Mapper<Chapter> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.update(
         chapter,
-        [callbackPtr, chapter, this](const std::size_t count)
+        [callbackPtr, jsonPtr, local, chapter, this](const std::size_t count)
         {
+            if (local) propagate("Modify", "Chapter", *jsonPtr);
+            
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
             (*callbackPtr)(resp);
@@ -118,41 +127,6 @@ void BaseCtrl::updateChapter(HttpCallback&& callback, CJR json, bool local)
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
-        }
-    );
-}
-
-static void sendPushReq(const HttpRequestPtr& req, Instance instance)
-{
-    auto client = HttpClient::newHttpClient(instance.url);
-    client->sendRequest(
-        req,
-        [instance]
-        (ReqResult result, const HttpResponsePtr& response) {
-            if (result != ReqResult::Ok)
-                globals.removeFollower(instance.url);
-        },
-        30.0  //TODO: use config values
-    );
-}
-
-void BaseCtrl::propagate(CSR action, const Chapter& chapter)
-{
-    auto r = HttpRequest::newHttpRequest();
-    r->setMethod(drogon::Get);
-    r->setPath(fmt::format("/sync/accept?address={}", globals.instance.url));
-    
-    auto chapterJson = chapter.toJson();
-    Json::Value json;
-    json["action"] = action;
-    json["item_type"] = "Chapter";
-    json["instance"] = globals.instance.url;
-    
-    globals.forAllFollowers (
-        [&](const Instance& itr) {
-            json["payload"] = encrypt(itr.url, chapterJson.toStyledString(), itr.publicKey);
-            r->setBody(json.toStyledString());
-            sendPushReq(r, itr);
         }
     );
 }

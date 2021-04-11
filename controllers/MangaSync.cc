@@ -12,39 +12,51 @@
 #include <sstream>
 #include <string>
 
-template <class T>
-static T getOrCreate(orm::DbClientPtr dbClientPtr, CSR name)
-{
-    auto c = Criteria(T::Cols::_name,CompareOperator::EQ,name);
-    drogon::orm::Mapper<T> mapper(dbClientPtr);
-    try {
-        return mapper.findOne(c);
-    } catch (const DrogonDbException &e) {
-        T object;
-        object.setName(name);
-        mapper.insert(object);
-        return object;
-    }
-}
-
 void BaseCtrl::addTitle(CSR name, const Manga& manga)
 {
     Title title;
     title.setName(name);
     title.setMangaId(manga.getValueOfId());
     drogon::orm::Mapper<Title> mapper(getDbClient());
-    mapper.insertFuture(title);
+    mapper.insert(title, [](Title t){}, [](const DrogonDbException& e){});
+}
+
+#define LOGEXCEPTCALLBACK \
+[](const DrogonDbException& e){ LOG_ERROR << e.base().what(); }
+
+#define ADDRELCALLBACK(Type, Relation) \
+[manga, this](Type object) \
+{ \
+    Relation relation; \
+    relation.setMangaId(manga.getValueOfId()); \
+    relation.set##Type##Id(object.getValueOfId()); \
+    drogon::orm::Mapper< Relation > mapper(getDbClient()); \
+    mapper.insert ( \
+        relation, \
+        [](Relation r){ }, \
+        LOGEXCEPTCALLBACK \
+    ); \
 }
 
 #define ADDRELFUNC(Type, Relation) \
 void BaseCtrl::add##Relation(CSR name, const Manga& manga) \
 { \
-    Type object = getOrCreate< Type >(getDbClient(), name); \
-    Relation relation; \
-    relation.setMangaId(manga.getValueOfId()); \
-    relation.set##Type##Id(object.getValueOfId()); \
-    drogon::orm::Mapper< Relation > mapper(getDbClient()); \
-    mapper.insertFuture(relation); \
+    auto c = Criteria(Type::Cols::_name,CompareOperator::EQ,name); \
+    drogon::orm::Mapper< Type > mapper(getDbClient()); \
+    mapper.findOne ( \
+        c, \
+        ADDRELCALLBACK(Type, Relation), \
+        [name, manga, this](const DrogonDbException& e) { \
+            Type object; \
+            object.setName(name); \
+            drogon::orm::Mapper< Type > mapper(getDbClient()); \
+            mapper.insert( \
+                object, \
+                ADDRELCALLBACK(Type, Relation), \
+                LOGEXCEPTCALLBACK \
+            ); \
+        } \
+    ); \
 }
 
 ADDRELFUNC(Person, Author)
@@ -52,8 +64,9 @@ ADDRELFUNC(Person, Artist)
 ADDRELFUNC(Tag, MangaTag)
 
 #define ADDRELSFUNC(Type, Array) \
-void BaseCtrl::add##Type##s(CJR json, const Manga& manga) \
+void BaseCtrl::add##Type##s(JSP jsonPtr, const Manga& manga) \
 { \
+    const auto& json = *jsonPtr; \
     if (json.isMember(#Array)) { \
         auto& array = json[#Array]; \
         if (array.isArray()) \
@@ -62,7 +75,7 @@ void BaseCtrl::add##Type##s(CJR json, const Manga& manga) \
 }
 
 ADDRELSFUNC(Title, titles)
-ADDRELSFUNC(Author, autors)
+ADDRELSFUNC(Author, authors)
 ADDRELSFUNC(Artist, artists)
 ADDRELSFUNC(MangaTag, tags)
 
@@ -78,10 +91,10 @@ REMOVERELSFUNC(Artist)
 REMOVERELSFUNC(MangaTag)
 
 #define UPDATERELSFUNC(Type) \
-void BaseCtrl::update##Type##s(CJR json, const Manga& manga) \
+void BaseCtrl::update##Type##s(JSP jsonPtr, const Manga& manga) \
 { \
     remove##Type##s(manga); \
-    add##Type##s(json, manga); \
+    add##Type##s(jsonPtr, manga); \
 }
 
 UPDATERELSFUNC(Title)
@@ -99,28 +112,27 @@ void BaseCtrl::addManga(HttpCallback&& callback, CJR json, bool local)
         return;
     }
     
-    if (
-        (!local && getByGlobalKey(json, manga))
-        || (local && getById(json, manga))
-    ) {
-        badRequest(callback, "Bad key");
+    if (!local && getByGlobalKey(json, manga)) {
+        badRequest(callback, "Bad global key");
         return;
     }
+    
+    manga = Manga(json);
     
     drogon::orm::Mapper<Manga> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
     auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.insert (
-        Manga(json),
+        manga,
         [callbackPtr, jsonPtr, local, this](Manga manga)
         {
-            addTitles(*jsonPtr, manga);
-            addAuthors(*jsonPtr, manga);
-            addArtists(*jsonPtr, manga);
-            addMangaTags(*jsonPtr, manga);
+            addTitles(jsonPtr, manga);
+            addAuthors(jsonPtr, manga);
+            addArtists(jsonPtr, manga);
+            addMangaTags(jsonPtr, manga);
             
-            if (local) addGlobalId(manga);
+            if (local) addGlobalId(jsonPtr, manga);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -153,17 +165,18 @@ void BaseCtrl::removeManga(HttpCallback&& callback, CJR json, bool local)
     drogon::orm::Mapper<Manga> mapper(getDbClient());
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
     auto c = Criteria(Manga::Cols::_id,CompareOperator::EQ, manga.getValueOfId());
+    auto jsonPtr = std::make_shared<Json::Value>(json);
     
     mapper.deleteBy(
         c,
-        [callbackPtr, manga, local, this](const std::size_t count)
+        [callbackPtr, jsonPtr, manga, local, this](const std::size_t count)
         {
             removeTitles(manga);
             removeAuthors(manga);
             removeArtists(manga);
             removeMangaTags(manga);
             
-            if(local) propagate("Delete", manga);
+            if(local) propagate("Delete", "Manga", *jsonPtr);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -214,12 +227,12 @@ void BaseCtrl::updateManga(HttpCallback&& callback, CJR json, bool local)
         manga,
         [callbackPtr, jsonPtr, manga, local, this](const std::size_t count)
         {
-            updateTitles(*jsonPtr, manga);
-            updateAuthors(*jsonPtr, manga);
-            updateArtists(*jsonPtr, manga);
-            updateMangaTags(*jsonPtr, manga);
+            updateTitles(jsonPtr, manga);
+            updateAuthors(jsonPtr, manga);
+            updateArtists(jsonPtr, manga);
+            updateMangaTags(jsonPtr, manga);
             
-            if(local) propagate("Update", manga);
+            if(local) propagate("Modify", "Manga", *jsonPtr);
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k202Accepted);
@@ -233,41 +246,6 @@ void BaseCtrl::updateManga(HttpCallback&& callback, CJR json, bool local)
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
-        }
-    );
-}
-
-static void sendPushReq(const HttpRequestPtr& req, Instance instance)
-{
-    auto client = HttpClient::newHttpClient(instance.url);
-    client->sendRequest(
-        req,
-        [instance]
-        (ReqResult result, const HttpResponsePtr& response) {
-            if (result != ReqResult::Ok)
-                globals.removeFollower(instance.url);
-        },
-        30.0  //TODO: use config values
-    );
-}
-
-void BaseCtrl::propagate(CSR action, const Manga& manga)
-{
-    auto r = HttpRequest::newHttpRequest();
-    r->setMethod(drogon::Get);
-    r->setPath(fmt::format("/sync/accept?address={}", globals.instance.url));
-    
-    auto mangaJson = mangaToJson(getDbClient(), manga);
-    Json::Value json;
-    json["action"] = action;
-    json["item_type"] = "Manga";
-    json["instance"] = globals.instance.url;
-    
-    globals.forAllFollowers (
-        [&](const Instance& itr) {
-            json["payload"] = encrypt(itr.url, mangaJson.toStyledString(), itr.publicKey);
-            r->setBody(json.toStyledString());
-            sendPushReq(r, itr);
         }
     );
 }

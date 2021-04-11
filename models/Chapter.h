@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -55,7 +58,7 @@ class Chapter
         static const std::string _date_added;
         static const std::string _ipfs_link;
         static const std::string _global_id;
-        static const std::string _update;
+        static const std::string _last_update;
     };
 
     const static int primaryKeyNumber;
@@ -257,14 +260,14 @@ class Chapter
     void setGlobalId(std::string &&pGlobalId) noexcept;
 
 
-    /**  For column update  */
-    ///Get the value of the column update, returns the default value if the column is null
-    const uint64_t &getValueOfUpdate() const noexcept;
+    /**  For column last_update  */
+    ///Get the value of the column last_update, returns the default value if the column is null
+    const uint64_t &getValueOfLastUpdate() const noexcept;
     ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
-    const std::shared_ptr<uint64_t> &getUpdate() const noexcept;
+    const std::shared_ptr<uint64_t> &getLastUpdate() const noexcept;
 
-    ///Set the value of the column update
-    void setUpdate(const uint64_t &pUpdate) noexcept;
+    ///Set the value of the column last_update
+    void setLastUpdate(const uint64_t &pLastUpdate) noexcept;
 
 
 
@@ -279,6 +282,9 @@ class Chapter
                   const ExceptionCallback &ecb) const;
   private:
     friend Mapper<Chapter>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<Chapter>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
@@ -299,7 +305,7 @@ class Chapter
     std::shared_ptr<uint64_t> dateAdded_;
     std::shared_ptr<std::string> ipfsLink_;
     std::shared_ptr<std::string> globalId_;
-    std::shared_ptr<uint64_t> update_;
+    std::shared_ptr<uint64_t> lastUpdate_;
     struct MetaData
     {
         const std::string colName_;
@@ -400,7 +406,7 @@ class Chapter
         }
         if(dirtyFlag_[14])
         {
-            sql += "update,";
+            sql += "last_update,";
             ++parametersCount;
         }
         if(!dirtyFlag_[14])

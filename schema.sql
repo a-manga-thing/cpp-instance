@@ -22,7 +22,7 @@ CREATE TABLE "manga" (
     "anilist_id" INTEGER,
     "mangaupdates_id" INTEGER,
     "global_id" STRING NOT NULL DEFAULT '',
-    "update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
+    "last_update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
     PRIMARY KEY("id")
 );
 
@@ -107,7 +107,7 @@ CREATE TABLE "chapter" (
     "date_added" INTEGER NOT NULL,
     "ipfs_link" STRING NOT NULL,
     "global_id" STRING NOT NULL DEFAULT '',
-    "update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
+    "last_update" INTEGER NOT NULL DEFAULT 0,  --unix timestamp
     PRIMARY KEY("id")
 );
 
