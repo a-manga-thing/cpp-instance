@@ -28,3 +28,11 @@ build/instance
 ```
 
 *NOTE: schema.sql comes with debug data*
+
+###Admin API
+
+__POST__ `/mod/login` takes a json object with the fields "name" and "pass" as argument, and returns a JSESSIONID cookie.
+
+__POST__ `/mod/add_manga`, __DELETE__ `/mod/remove_manga`, and __PUT__ `/mod/update_manga` take a manga encoded as a json object.
+
+__POST__ `/mod/add_chapter`, __DELETE__ `/mod/remove_chapter`, and __PUT__ `/mod/update_chapter` take a chapter encoded as a json object.
