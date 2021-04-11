@@ -77,7 +77,7 @@ void BaseCtrl::add##Type##s(JSP jsonPtr, const Manga& manga) \
 ADDRELSFUNC(Title, titles)
 ADDRELSFUNC(Author, authors)
 ADDRELSFUNC(Artist, artists)
-ADDRELSFUNC(MangaTag, tags)
+ADDRELSFUNC(MangaTag, genres)
 
 #define REMOVERELSFUNC(Type) \
 void BaseCtrl::remove##Type##s(const Manga& manga) \

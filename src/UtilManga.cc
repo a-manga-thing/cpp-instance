@@ -27,7 +27,7 @@ Json::Value mangaToJson (
     GETSIMPLEREL(title)
     GETCOMPLEXREL(person, author, person_id, "authors")
     GETCOMPLEXREL(person, artist, person_id, "artists")
-    GETCOMPLEXREL(tag, manga_tag, tag_id, "tags")
+    GETCOMPLEXREL(tag, manga_tag, tag_id, "genres")
     
     return ret;
 }
