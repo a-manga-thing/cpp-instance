@@ -29,7 +29,7 @@ build/instance
 
 *NOTE: schema.sql comes with debug data*
 
-###Admin API
+### Admin API
 
 __POST__ `/mod/login` takes a json object with the fields "name" and "pass" as argument, and returns a JSESSIONID cookie.
 
