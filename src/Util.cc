@@ -1,5 +1,8 @@
 #include "Util.h"
 
+#include <rnp/rnp.h>
+#include <fmt/core.h>
+#include <openssl/md5.h>
 #include <ImageMagick-7/MagickWand/MagickWand.h>
 
 struct Rect
@@ -50,6 +53,21 @@ bool makeThumbnail(CSR name, const drogon::HttpFile& httpFile)
     return true;
 }
 
+std::string md5(CSR str)
+{
+    static constexpr auto md5DigestLen = MD5_DIGEST_LENGTH;
+    static constexpr auto md5StrLen = md5DigestLen * 2 + 1;
+    
+    unsigned char md5 [md5DigestLen];
+    MD5 ((const unsigned char*)str.c_str(), str.size(), md5);
+    std::string ret (' ', md5StrLen);
+    
+    for (int i = 0; i < md5DigestLen; ++i)
+        sprintf(ret.data()+i*2, "%02x", md5[i]);
+    
+    return ret;
+}
+
 bool isEx (std::string& str)
 {
     if (str.back()=='-') { str.pop_back(); return true; }
@@ -97,4 +115,13 @@ std::string joinVec(const std::vector<std::string>& vec)
         if (itr != std::prev(vec.end())) ss << ",";
     }
     return ss.str();
+}
+
+void badRequest(HttpCallback& callback, CSR err, drogon::HttpStatusCode code)
+{
+    Json::Value ret;
+    ret["error"]=err;
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(code);
+    callback(resp);
 }

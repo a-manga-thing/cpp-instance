@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -43,6 +46,7 @@ class Chapter
     {
         static const std::string _id;
         static const std::string _manga_id;
+        static const std::string _manga_global_id;
         static const std::string _chapter_no;
         static const std::string _chapter_postfix;
         static const std::string _ordinal;
@@ -53,6 +57,8 @@ class Chapter
         static const std::string _group_id;
         static const std::string _date_added;
         static const std::string _ipfs_link;
+        static const std::string _global_id;
+        static const std::string _last_update;
     };
 
     const static int primaryKeyNumber;
@@ -122,6 +128,17 @@ class Chapter
 
     ///Set the value of the column manga_id
     void setMangaId(const uint64_t &pMangaId) noexcept;
+
+
+    /**  For column manga_global_id  */
+    ///Get the value of the column manga_global_id, returns the default value if the column is null
+    const std::string &getValueOfMangaGlobalId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getMangaGlobalId() const noexcept;
+
+    ///Set the value of the column manga_global_id
+    void setMangaGlobalId(const std::string &pMangaGlobalId) noexcept;
+    void setMangaGlobalId(std::string &&pMangaGlobalId) noexcept;
 
 
     /**  For column chapter_no  */
@@ -232,8 +249,29 @@ class Chapter
     void setIpfsLink(std::string &&pIpfsLink) noexcept;
 
 
+    /**  For column global_id  */
+    ///Get the value of the column global_id, returns the default value if the column is null
+    const std::string &getValueOfGlobalId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getGlobalId() const noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 12;  }
+    ///Set the value of the column global_id
+    void setGlobalId(const std::string &pGlobalId) noexcept;
+    void setGlobalId(std::string &&pGlobalId) noexcept;
+
+
+    /**  For column last_update  */
+    ///Get the value of the column last_update, returns the default value if the column is null
+    const uint64_t &getValueOfLastUpdate() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<uint64_t> &getLastUpdate() const noexcept;
+
+    ///Set the value of the column last_update
+    void setLastUpdate(const uint64_t &pLastUpdate) noexcept;
+
+
+
+    static size_t getColumnNumber() noexcept {  return 15;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -244,6 +282,9 @@ class Chapter
                   const ExceptionCallback &ecb) const;
   private:
     friend Mapper<Chapter>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<Chapter>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
@@ -252,6 +293,7 @@ class Chapter
     void updateId(const uint64_t id);
     std::shared_ptr<uint64_t> id_;
     std::shared_ptr<uint64_t> mangaId_;
+    std::shared_ptr<std::string> mangaGlobalId_;
     std::shared_ptr<uint64_t> chapterNo_;
     std::shared_ptr<std::string> chapterPostfix_;
     std::shared_ptr<uint64_t> ordinal_;
@@ -262,6 +304,8 @@ class Chapter
     std::shared_ptr<uint64_t> groupId_;
     std::shared_ptr<uint64_t> dateAdded_;
     std::shared_ptr<std::string> ipfsLink_;
+    std::shared_ptr<std::string> globalId_;
+    std::shared_ptr<uint64_t> lastUpdate_;
     struct MetaData
     {
         const std::string colName_;
@@ -273,7 +317,7 @@ class Chapter
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[12]={ false };
+    bool dirtyFlag_[15]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -298,53 +342,76 @@ class Chapter
         }
         if(dirtyFlag_[2])
         {
-            sql += "chapter_no,";
+            sql += "manga_global_id,";
             ++parametersCount;
         }
         if(dirtyFlag_[3])
         {
-            sql += "chapter_postfix,";
+            sql += "chapter_no,";
             ++parametersCount;
         }
         if(dirtyFlag_[4])
         {
-            sql += "ordinal,";
+            sql += "chapter_postfix,";
             ++parametersCount;
         }
         if(dirtyFlag_[5])
         {
-            sql += "pages,";
+            sql += "ordinal,";
             ++parametersCount;
         }
         if(dirtyFlag_[6])
         {
-            sql += "title,";
+            sql += "pages,";
             ++parametersCount;
         }
         if(dirtyFlag_[7])
         {
-            sql += "version,";
+            sql += "title,";
             ++parametersCount;
         }
         if(dirtyFlag_[8])
         {
-            sql += "language_id,";
+            sql += "version,";
             ++parametersCount;
         }
         if(dirtyFlag_[9])
         {
-            sql += "group_id,";
+            sql += "language_id,";
             ++parametersCount;
         }
         if(dirtyFlag_[10])
         {
-            sql += "date_added,";
+            sql += "group_id,";
             ++parametersCount;
         }
         if(dirtyFlag_[11])
         {
+            sql += "date_added,";
+            ++parametersCount;
+        }
+        if(dirtyFlag_[12])
+        {
             sql += "ipfs_link,";
             ++parametersCount;
+        }
+        if(dirtyFlag_[13])
+        {
+            sql += "global_id,";
+            ++parametersCount;
+        }
+        if(!dirtyFlag_[13])
+        {
+            needSelection=true;
+        }
+        if(dirtyFlag_[14])
+        {
+            sql += "last_update,";
+            ++parametersCount;
+        }
+        if(!dirtyFlag_[14])
+        {
+            needSelection=true;
         }
         if(parametersCount > 0)
         {
@@ -405,6 +472,21 @@ class Chapter
 
         } 
         if(dirtyFlag_[11])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[12])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[13])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[14])
         {
             sql.append("?,");
 

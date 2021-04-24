@@ -15,6 +15,7 @@ using namespace drogon_model::sqlite3;
 
 const std::string Chapter::Cols::_id = "id";
 const std::string Chapter::Cols::_manga_id = "manga_id";
+const std::string Chapter::Cols::_manga_global_id = "manga_global_id";
 const std::string Chapter::Cols::_chapter_no = "chapter_no";
 const std::string Chapter::Cols::_chapter_postfix = "chapter_postfix";
 const std::string Chapter::Cols::_ordinal = "ordinal";
@@ -25,6 +26,8 @@ const std::string Chapter::Cols::_language_id = "language_id";
 const std::string Chapter::Cols::_group_id = "group_id";
 const std::string Chapter::Cols::_date_added = "date_added";
 const std::string Chapter::Cols::_ipfs_link = "ipfs_link";
+const std::string Chapter::Cols::_global_id = "global_id";
+const std::string Chapter::Cols::_last_update = "last_update";
 const std::string Chapter::primaryKeyName = "id";
 const bool Chapter::hasPrimaryKey = true;
 const std::string Chapter::tableName = "chapter";
@@ -32,6 +35,7 @@ const std::string Chapter::tableName = "chapter";
 const std::vector<typename Chapter::MetaData> Chapter::metaData_={
 {"id","uint64_t","integer",8,1,1,1},
 {"manga_id","uint64_t","integer",8,0,0,1},
+{"manga_global_id","std::string","string",0,0,0,1},
 {"chapter_no","uint64_t","integer",8,0,0,1},
 {"chapter_postfix","std::string","string",0,0,0,0},
 {"ordinal","uint64_t","integer",8,0,0,1},
@@ -41,7 +45,9 @@ const std::vector<typename Chapter::MetaData> Chapter::metaData_={
 {"language_id","std::string","string",0,0,0,1},
 {"group_id","uint64_t","integer",8,0,0,0},
 {"date_added","uint64_t","integer",8,0,0,1},
-{"ipfs_link","std::string","string",0,0,0,1}
+{"ipfs_link","std::string","string",0,0,0,1},
+{"global_id","std::string","string",0,0,0,1},
+{"last_update","uint64_t","integer",8,0,0,1}
 };
 const std::string &Chapter::getColumnName(size_t index) noexcept(false)
 {
@@ -59,6 +65,10 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
         if(!r["manga_id"].isNull())
         {
             mangaId_=std::make_shared<uint64_t>(r["manga_id"].as<uint64_t>());
+        }
+        if(!r["manga_global_id"].isNull())
+        {
+            mangaGlobalId_=std::make_shared<std::string>(r["manga_global_id"].as<std::string>());
         }
         if(!r["chapter_no"].isNull())
         {
@@ -100,11 +110,19 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
         {
             ipfsLink_=std::make_shared<std::string>(r["ipfs_link"].as<std::string>());
         }
+        if(!r["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(r["global_id"].as<std::string>());
+        }
+        if(!r["last_update"].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>(r["last_update"].as<uint64_t>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 12 > r.size())
+        if(offset + 15 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -123,52 +141,67 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 2;
         if(!r[index].isNull())
         {
-            chapterNo_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            mangaGlobalId_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 3;
         if(!r[index].isNull())
         {
-            chapterPostfix_=std::make_shared<std::string>(r[index].as<std::string>());
+            chapterNo_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 4;
         if(!r[index].isNull())
         {
-            ordinal_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            chapterPostfix_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 5;
         if(!r[index].isNull())
         {
-            pages_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            ordinal_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 6;
         if(!r[index].isNull())
         {
-            title_=std::make_shared<std::string>(r[index].as<std::string>());
+            pages_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 7;
         if(!r[index].isNull())
         {
-            version_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            title_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 8;
         if(!r[index].isNull())
         {
-            languageId_=std::make_shared<std::string>(r[index].as<std::string>());
+            version_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 9;
         if(!r[index].isNull())
         {
-            groupId_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            languageId_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 10;
         if(!r[index].isNull())
         {
-            dateAdded_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+            groupId_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
         index = offset + 11;
         if(!r[index].isNull())
         {
+            dateAdded_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
+        }
+        index = offset + 12;
+        if(!r[index].isNull())
+        {
             ipfsLink_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 13;
+        if(!r[index].isNull())
+        {
+            globalId_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 14;
+        if(!r[index].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>(r[index].as<uint64_t>());
         }
     }
 
@@ -176,7 +209,7 @@ Chapter::Chapter(const Row &r, const ssize_t indexOffset) noexcept
 
 Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 12)
+    if(pMasqueradingVector.size() != 15)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -202,7 +235,8 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
+            mangaGlobalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
+
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -210,8 +244,7 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[3] = true;
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
-            chapterPostfix_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
-
+            chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[3]].asUInt64());
         }
     }
     if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
@@ -219,7 +252,8 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[4] = true;
         if(!pJson[pMasqueradingVector[4]].isNull())
         {
-            ordinal_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
+            chapterPostfix_=std::make_shared<std::string>(pJson[pMasqueradingVector[4]].asString());
+
         }
     }
     if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
@@ -227,7 +261,7 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[5] = true;
         if(!pJson[pMasqueradingVector[5]].isNull())
         {
-            pages_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
+            ordinal_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
         }
     }
     if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
@@ -235,8 +269,7 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[6] = true;
         if(!pJson[pMasqueradingVector[6]].isNull())
         {
-            title_=std::make_shared<std::string>(pJson[pMasqueradingVector[6]].asString());
-
+            pages_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[6]].asUInt64());
         }
     }
     if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
@@ -244,7 +277,8 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[7] = true;
         if(!pJson[pMasqueradingVector[7]].isNull())
         {
-            version_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[7]].asUInt64());
+            title_=std::make_shared<std::string>(pJson[pMasqueradingVector[7]].asString());
+
         }
     }
     if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
@@ -252,8 +286,7 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[8] = true;
         if(!pJson[pMasqueradingVector[8]].isNull())
         {
-            languageId_=std::make_shared<std::string>(pJson[pMasqueradingVector[8]].asString());
-
+            version_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[8]].asUInt64());
         }
     }
     if(!pMasqueradingVector[9].empty() && pJson.isMember(pMasqueradingVector[9]))
@@ -261,7 +294,8 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[9] = true;
         if(!pJson[pMasqueradingVector[9]].isNull())
         {
-            groupId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
+            languageId_=std::make_shared<std::string>(pJson[pMasqueradingVector[9]].asString());
+
         }
     }
     if(!pMasqueradingVector[10].empty() && pJson.isMember(pMasqueradingVector[10]))
@@ -269,7 +303,7 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[10] = true;
         if(!pJson[pMasqueradingVector[10]].isNull())
         {
-            dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[10]].asUInt64());
+            groupId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[10]].asUInt64());
         }
     }
     if(!pMasqueradingVector[11].empty() && pJson.isMember(pMasqueradingVector[11]))
@@ -277,8 +311,33 @@ Chapter::Chapter(const Json::Value &pJson, const std::vector<std::string> &pMasq
         dirtyFlag_[11] = true;
         if(!pJson[pMasqueradingVector[11]].isNull())
         {
-            ipfsLink_=std::make_shared<std::string>(pJson[pMasqueradingVector[11]].asString());
+            dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[11]].asUInt64());
+        }
+    }
+    if(!pMasqueradingVector[12].empty() && pJson.isMember(pMasqueradingVector[12]))
+    {
+        dirtyFlag_[12] = true;
+        if(!pJson[pMasqueradingVector[12]].isNull())
+        {
+            ipfsLink_=std::make_shared<std::string>(pJson[pMasqueradingVector[12]].asString());
 
+        }
+    }
+    if(!pMasqueradingVector[13].empty() && pJson.isMember(pMasqueradingVector[13]))
+    {
+        dirtyFlag_[13] = true;
+        if(!pJson[pMasqueradingVector[13]].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[13]].asString());
+
+        }
+    }
+    if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+    {
+        dirtyFlag_[14] = true;
+        if(!pJson[pMasqueradingVector[14]].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[14]].asUInt64());
         }
     }
 }
@@ -301,9 +360,17 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
             mangaId_=std::make_shared<uint64_t>((uint64_t)pJson["manga_id"].asUInt64());
         }
     }
-    if(pJson.isMember("chapter_no"))
+    if(pJson.isMember("manga_global_id"))
     {
         dirtyFlag_[2]=true;
+        if(!pJson["manga_global_id"].isNull())
+        {
+            mangaGlobalId_=std::make_shared<std::string>(pJson["manga_global_id"].asString());
+        }
+    }
+    if(pJson.isMember("chapter_no"))
+    {
+        dirtyFlag_[3]=true;
         if(!pJson["chapter_no"].isNull())
         {
             chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson["chapter_no"].asUInt64());
@@ -311,7 +378,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("chapter_postfix"))
     {
-        dirtyFlag_[3]=true;
+        dirtyFlag_[4]=true;
         if(!pJson["chapter_postfix"].isNull())
         {
             chapterPostfix_=std::make_shared<std::string>(pJson["chapter_postfix"].asString());
@@ -319,7 +386,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("ordinal"))
     {
-        dirtyFlag_[4]=true;
+        dirtyFlag_[5]=true;
         if(!pJson["ordinal"].isNull())
         {
             ordinal_=std::make_shared<uint64_t>((uint64_t)pJson["ordinal"].asUInt64());
@@ -327,7 +394,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("pages"))
     {
-        dirtyFlag_[5]=true;
+        dirtyFlag_[6]=true;
         if(!pJson["pages"].isNull())
         {
             pages_=std::make_shared<uint64_t>((uint64_t)pJson["pages"].asUInt64());
@@ -335,7 +402,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("title"))
     {
-        dirtyFlag_[6]=true;
+        dirtyFlag_[7]=true;
         if(!pJson["title"].isNull())
         {
             title_=std::make_shared<std::string>(pJson["title"].asString());
@@ -343,7 +410,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("version"))
     {
-        dirtyFlag_[7]=true;
+        dirtyFlag_[8]=true;
         if(!pJson["version"].isNull())
         {
             version_=std::make_shared<uint64_t>((uint64_t)pJson["version"].asUInt64());
@@ -351,7 +418,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("language_id"))
     {
-        dirtyFlag_[8]=true;
+        dirtyFlag_[9]=true;
         if(!pJson["language_id"].isNull())
         {
             languageId_=std::make_shared<std::string>(pJson["language_id"].asString());
@@ -359,7 +426,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("group_id"))
     {
-        dirtyFlag_[9]=true;
+        dirtyFlag_[10]=true;
         if(!pJson["group_id"].isNull())
         {
             groupId_=std::make_shared<uint64_t>((uint64_t)pJson["group_id"].asUInt64());
@@ -367,7 +434,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("date_added"))
     {
-        dirtyFlag_[10]=true;
+        dirtyFlag_[11]=true;
         if(!pJson["date_added"].isNull())
         {
             dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson["date_added"].asUInt64());
@@ -375,10 +442,26 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("ipfs_link"))
     {
-        dirtyFlag_[11]=true;
+        dirtyFlag_[12]=true;
         if(!pJson["ipfs_link"].isNull())
         {
             ipfsLink_=std::make_shared<std::string>(pJson["ipfs_link"].asString());
+        }
+    }
+    if(pJson.isMember("global_id"))
+    {
+        dirtyFlag_[13]=true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("last_update"))
+    {
+        dirtyFlag_[14]=true;
+        if(!pJson["last_update"].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson["last_update"].asUInt64());
         }
     }
 }
@@ -386,7 +469,7 @@ Chapter::Chapter(const Json::Value &pJson) noexcept(false)
 void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 12)
+    if(pMasqueradingVector.size() != 15)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -411,7 +494,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[2]].asUInt64());
+            mangaGlobalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -419,7 +502,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[3] = true;
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
-            chapterPostfix_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
+            chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[3]].asUInt64());
         }
     }
     if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
@@ -427,7 +510,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[4] = true;
         if(!pJson[pMasqueradingVector[4]].isNull())
         {
-            ordinal_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[4]].asUInt64());
+            chapterPostfix_=std::make_shared<std::string>(pJson[pMasqueradingVector[4]].asString());
         }
     }
     if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
@@ -435,7 +518,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[5] = true;
         if(!pJson[pMasqueradingVector[5]].isNull())
         {
-            pages_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
+            ordinal_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[5]].asUInt64());
         }
     }
     if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
@@ -443,7 +526,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[6] = true;
         if(!pJson[pMasqueradingVector[6]].isNull())
         {
-            title_=std::make_shared<std::string>(pJson[pMasqueradingVector[6]].asString());
+            pages_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[6]].asUInt64());
         }
     }
     if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
@@ -451,7 +534,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[7] = true;
         if(!pJson[pMasqueradingVector[7]].isNull())
         {
-            version_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[7]].asUInt64());
+            title_=std::make_shared<std::string>(pJson[pMasqueradingVector[7]].asString());
         }
     }
     if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
@@ -459,7 +542,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[8] = true;
         if(!pJson[pMasqueradingVector[8]].isNull())
         {
-            languageId_=std::make_shared<std::string>(pJson[pMasqueradingVector[8]].asString());
+            version_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[8]].asUInt64());
         }
     }
     if(!pMasqueradingVector[9].empty() && pJson.isMember(pMasqueradingVector[9]))
@@ -467,7 +550,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[9] = true;
         if(!pJson[pMasqueradingVector[9]].isNull())
         {
-            groupId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[9]].asUInt64());
+            languageId_=std::make_shared<std::string>(pJson[pMasqueradingVector[9]].asString());
         }
     }
     if(!pMasqueradingVector[10].empty() && pJson.isMember(pMasqueradingVector[10]))
@@ -475,7 +558,7 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[10] = true;
         if(!pJson[pMasqueradingVector[10]].isNull())
         {
-            dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[10]].asUInt64());
+            groupId_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[10]].asUInt64());
         }
     }
     if(!pMasqueradingVector[11].empty() && pJson.isMember(pMasqueradingVector[11]))
@@ -483,7 +566,31 @@ void Chapter::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[11] = true;
         if(!pJson[pMasqueradingVector[11]].isNull())
         {
-            ipfsLink_=std::make_shared<std::string>(pJson[pMasqueradingVector[11]].asString());
+            dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[11]].asUInt64());
+        }
+    }
+    if(!pMasqueradingVector[12].empty() && pJson.isMember(pMasqueradingVector[12]))
+    {
+        dirtyFlag_[12] = true;
+        if(!pJson[pMasqueradingVector[12]].isNull())
+        {
+            ipfsLink_=std::make_shared<std::string>(pJson[pMasqueradingVector[12]].asString());
+        }
+    }
+    if(!pMasqueradingVector[13].empty() && pJson.isMember(pMasqueradingVector[13]))
+    {
+        dirtyFlag_[13] = true;
+        if(!pJson[pMasqueradingVector[13]].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson[pMasqueradingVector[13]].asString());
+        }
+    }
+    if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+    {
+        dirtyFlag_[14] = true;
+        if(!pJson[pMasqueradingVector[14]].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson[pMasqueradingVector[14]].asUInt64());
         }
     }
 }
@@ -505,9 +612,17 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
             mangaId_=std::make_shared<uint64_t>((uint64_t)pJson["manga_id"].asUInt64());
         }
     }
-    if(pJson.isMember("chapter_no"))
+    if(pJson.isMember("manga_global_id"))
     {
         dirtyFlag_[2] = true;
+        if(!pJson["manga_global_id"].isNull())
+        {
+            mangaGlobalId_=std::make_shared<std::string>(pJson["manga_global_id"].asString());
+        }
+    }
+    if(pJson.isMember("chapter_no"))
+    {
+        dirtyFlag_[3] = true;
         if(!pJson["chapter_no"].isNull())
         {
             chapterNo_=std::make_shared<uint64_t>((uint64_t)pJson["chapter_no"].asUInt64());
@@ -515,7 +630,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("chapter_postfix"))
     {
-        dirtyFlag_[3] = true;
+        dirtyFlag_[4] = true;
         if(!pJson["chapter_postfix"].isNull())
         {
             chapterPostfix_=std::make_shared<std::string>(pJson["chapter_postfix"].asString());
@@ -523,7 +638,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("ordinal"))
     {
-        dirtyFlag_[4] = true;
+        dirtyFlag_[5] = true;
         if(!pJson["ordinal"].isNull())
         {
             ordinal_=std::make_shared<uint64_t>((uint64_t)pJson["ordinal"].asUInt64());
@@ -531,7 +646,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("pages"))
     {
-        dirtyFlag_[5] = true;
+        dirtyFlag_[6] = true;
         if(!pJson["pages"].isNull())
         {
             pages_=std::make_shared<uint64_t>((uint64_t)pJson["pages"].asUInt64());
@@ -539,7 +654,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("title"))
     {
-        dirtyFlag_[6] = true;
+        dirtyFlag_[7] = true;
         if(!pJson["title"].isNull())
         {
             title_=std::make_shared<std::string>(pJson["title"].asString());
@@ -547,7 +662,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("version"))
     {
-        dirtyFlag_[7] = true;
+        dirtyFlag_[8] = true;
         if(!pJson["version"].isNull())
         {
             version_=std::make_shared<uint64_t>((uint64_t)pJson["version"].asUInt64());
@@ -555,7 +670,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("language_id"))
     {
-        dirtyFlag_[8] = true;
+        dirtyFlag_[9] = true;
         if(!pJson["language_id"].isNull())
         {
             languageId_=std::make_shared<std::string>(pJson["language_id"].asString());
@@ -563,7 +678,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("group_id"))
     {
-        dirtyFlag_[9] = true;
+        dirtyFlag_[10] = true;
         if(!pJson["group_id"].isNull())
         {
             groupId_=std::make_shared<uint64_t>((uint64_t)pJson["group_id"].asUInt64());
@@ -571,7 +686,7 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("date_added"))
     {
-        dirtyFlag_[10] = true;
+        dirtyFlag_[11] = true;
         if(!pJson["date_added"].isNull())
         {
             dateAdded_=std::make_shared<uint64_t>((uint64_t)pJson["date_added"].asUInt64());
@@ -579,10 +694,26 @@ void Chapter::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("ipfs_link"))
     {
-        dirtyFlag_[11] = true;
+        dirtyFlag_[12] = true;
         if(!pJson["ipfs_link"].isNull())
         {
             ipfsLink_=std::make_shared<std::string>(pJson["ipfs_link"].asString());
+        }
+    }
+    if(pJson.isMember("global_id"))
+    {
+        dirtyFlag_[13] = true;
+        if(!pJson["global_id"].isNull())
+        {
+            globalId_=std::make_shared<std::string>(pJson["global_id"].asString());
+        }
+    }
+    if(pJson.isMember("last_update"))
+    {
+        dirtyFlag_[14] = true;
+        if(!pJson["last_update"].isNull())
+        {
+            lastUpdate_=std::make_shared<uint64_t>((uint64_t)pJson["last_update"].asUInt64());
         }
     }
 }
@@ -632,6 +763,31 @@ void Chapter::setMangaId(const uint64_t &pMangaId) noexcept
 
 
 
+const std::string &Chapter::getValueOfMangaGlobalId() const noexcept
+{
+    const static std::string defaultValue = std::string();
+    if(mangaGlobalId_)
+        return *mangaGlobalId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Chapter::getMangaGlobalId() const noexcept
+{
+    return mangaGlobalId_;
+}
+void Chapter::setMangaGlobalId(const std::string &pMangaGlobalId) noexcept
+{
+    mangaGlobalId_ = std::make_shared<std::string>(pMangaGlobalId);
+    dirtyFlag_[2] = true;
+}
+void Chapter::setMangaGlobalId(std::string &&pMangaGlobalId) noexcept
+{
+    mangaGlobalId_ = std::make_shared<std::string>(std::move(pMangaGlobalId));
+    dirtyFlag_[2] = true;
+}
+
+
+
+
 const uint64_t &Chapter::getValueOfChapterNo() const noexcept
 {
     const static uint64_t defaultValue = uint64_t();
@@ -646,7 +802,7 @@ const std::shared_ptr<uint64_t> &Chapter::getChapterNo() const noexcept
 void Chapter::setChapterNo(const uint64_t &pChapterNo) noexcept
 {
     chapterNo_ = std::make_shared<uint64_t>(pChapterNo);
-    dirtyFlag_[2] = true;
+    dirtyFlag_[3] = true;
 }
 
 
@@ -666,19 +822,19 @@ const std::shared_ptr<std::string> &Chapter::getChapterPostfix() const noexcept
 void Chapter::setChapterPostfix(const std::string &pChapterPostfix) noexcept
 {
     chapterPostfix_ = std::make_shared<std::string>(pChapterPostfix);
-    dirtyFlag_[3] = true;
+    dirtyFlag_[4] = true;
 }
 void Chapter::setChapterPostfix(std::string &&pChapterPostfix) noexcept
 {
     chapterPostfix_ = std::make_shared<std::string>(std::move(pChapterPostfix));
-    dirtyFlag_[3] = true;
+    dirtyFlag_[4] = true;
 }
 
 
 void Chapter::setChapterPostfixToNull() noexcept
 {
     chapterPostfix_.reset();
-    dirtyFlag_[3] = true;
+    dirtyFlag_[4] = true;
 }
 
 
@@ -696,7 +852,7 @@ const std::shared_ptr<uint64_t> &Chapter::getOrdinal() const noexcept
 void Chapter::setOrdinal(const uint64_t &pOrdinal) noexcept
 {
     ordinal_ = std::make_shared<uint64_t>(pOrdinal);
-    dirtyFlag_[4] = true;
+    dirtyFlag_[5] = true;
 }
 
 
@@ -716,7 +872,7 @@ const std::shared_ptr<uint64_t> &Chapter::getPages() const noexcept
 void Chapter::setPages(const uint64_t &pPages) noexcept
 {
     pages_ = std::make_shared<uint64_t>(pPages);
-    dirtyFlag_[5] = true;
+    dirtyFlag_[6] = true;
 }
 
 
@@ -736,19 +892,19 @@ const std::shared_ptr<std::string> &Chapter::getTitle() const noexcept
 void Chapter::setTitle(const std::string &pTitle) noexcept
 {
     title_ = std::make_shared<std::string>(pTitle);
-    dirtyFlag_[6] = true;
+    dirtyFlag_[7] = true;
 }
 void Chapter::setTitle(std::string &&pTitle) noexcept
 {
     title_ = std::make_shared<std::string>(std::move(pTitle));
-    dirtyFlag_[6] = true;
+    dirtyFlag_[7] = true;
 }
 
 
 void Chapter::setTitleToNull() noexcept
 {
     title_.reset();
-    dirtyFlag_[6] = true;
+    dirtyFlag_[7] = true;
 }
 
 
@@ -766,14 +922,14 @@ const std::shared_ptr<uint64_t> &Chapter::getVersion() const noexcept
 void Chapter::setVersion(const uint64_t &pVersion) noexcept
 {
     version_ = std::make_shared<uint64_t>(pVersion);
-    dirtyFlag_[7] = true;
+    dirtyFlag_[8] = true;
 }
 
 
 void Chapter::setVersionToNull() noexcept
 {
     version_.reset();
-    dirtyFlag_[7] = true;
+    dirtyFlag_[8] = true;
 }
 
 
@@ -791,12 +947,12 @@ const std::shared_ptr<std::string> &Chapter::getLanguageId() const noexcept
 void Chapter::setLanguageId(const std::string &pLanguageId) noexcept
 {
     languageId_ = std::make_shared<std::string>(pLanguageId);
-    dirtyFlag_[8] = true;
+    dirtyFlag_[9] = true;
 }
 void Chapter::setLanguageId(std::string &&pLanguageId) noexcept
 {
     languageId_ = std::make_shared<std::string>(std::move(pLanguageId));
-    dirtyFlag_[8] = true;
+    dirtyFlag_[9] = true;
 }
 
 
@@ -816,14 +972,14 @@ const std::shared_ptr<uint64_t> &Chapter::getGroupId() const noexcept
 void Chapter::setGroupId(const uint64_t &pGroupId) noexcept
 {
     groupId_ = std::make_shared<uint64_t>(pGroupId);
-    dirtyFlag_[9] = true;
+    dirtyFlag_[10] = true;
 }
 
 
 void Chapter::setGroupIdToNull() noexcept
 {
     groupId_.reset();
-    dirtyFlag_[9] = true;
+    dirtyFlag_[10] = true;
 }
 
 
@@ -841,7 +997,7 @@ const std::shared_ptr<uint64_t> &Chapter::getDateAdded() const noexcept
 void Chapter::setDateAdded(const uint64_t &pDateAdded) noexcept
 {
     dateAdded_ = std::make_shared<uint64_t>(pDateAdded);
-    dirtyFlag_[10] = true;
+    dirtyFlag_[11] = true;
 }
 
 
@@ -861,12 +1017,57 @@ const std::shared_ptr<std::string> &Chapter::getIpfsLink() const noexcept
 void Chapter::setIpfsLink(const std::string &pIpfsLink) noexcept
 {
     ipfsLink_ = std::make_shared<std::string>(pIpfsLink);
-    dirtyFlag_[11] = true;
+    dirtyFlag_[12] = true;
 }
 void Chapter::setIpfsLink(std::string &&pIpfsLink) noexcept
 {
     ipfsLink_ = std::make_shared<std::string>(std::move(pIpfsLink));
-    dirtyFlag_[11] = true;
+    dirtyFlag_[12] = true;
+}
+
+
+
+
+const std::string &Chapter::getValueOfGlobalId() const noexcept
+{
+    const static std::string defaultValue = std::string();
+    if(globalId_)
+        return *globalId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Chapter::getGlobalId() const noexcept
+{
+    return globalId_;
+}
+void Chapter::setGlobalId(const std::string &pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(pGlobalId);
+    dirtyFlag_[13] = true;
+}
+void Chapter::setGlobalId(std::string &&pGlobalId) noexcept
+{
+    globalId_ = std::make_shared<std::string>(std::move(pGlobalId));
+    dirtyFlag_[13] = true;
+}
+
+
+
+
+const uint64_t &Chapter::getValueOfLastUpdate() const noexcept
+{
+    const static uint64_t defaultValue = uint64_t();
+    if(lastUpdate_)
+        return *lastUpdate_;
+    return defaultValue;
+}
+const std::shared_ptr<uint64_t> &Chapter::getLastUpdate() const noexcept
+{
+    return lastUpdate_;
+}
+void Chapter::setLastUpdate(const uint64_t &pLastUpdate) noexcept
+{
+    lastUpdate_ = std::make_shared<uint64_t>(pLastUpdate);
+    dirtyFlag_[14] = true;
 }
 
 
@@ -881,6 +1082,7 @@ const std::vector<std::string> &Chapter::insertColumns() noexcept
 {
     static const std::vector<std::string> inCols={
         "manga_id",
+        "manga_global_id",
         "chapter_no",
         "chapter_postfix",
         "ordinal",
@@ -890,7 +1092,9 @@ const std::vector<std::string> &Chapter::insertColumns() noexcept
         "language_id",
         "group_id",
         "date_added",
-        "ipfs_link"
+        "ipfs_link",
+        "global_id",
+        "last_update"
     };
     return inCols;
 }
@@ -910,6 +1114,17 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[2])
     {
+        if(getMangaGlobalId())
+        {
+            binder << getValueOfMangaGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[3])
+    {
         if(getChapterNo())
         {
             binder << getValueOfChapterNo();
@@ -919,7 +1134,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[3])
+    if(dirtyFlag_[4])
     {
         if(getChapterPostfix())
         {
@@ -930,7 +1145,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[4])
+    if(dirtyFlag_[5])
     {
         if(getOrdinal())
         {
@@ -941,7 +1156,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[5])
+    if(dirtyFlag_[6])
     {
         if(getPages())
         {
@@ -952,7 +1167,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[6])
+    if(dirtyFlag_[7])
     {
         if(getTitle())
         {
@@ -963,7 +1178,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[7])
+    if(dirtyFlag_[8])
     {
         if(getVersion())
         {
@@ -974,7 +1189,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[8])
+    if(dirtyFlag_[9])
     {
         if(getLanguageId())
         {
@@ -985,7 +1200,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[9])
+    if(dirtyFlag_[10])
     {
         if(getGroupId())
         {
@@ -996,7 +1211,7 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[10])
+    if(dirtyFlag_[11])
     {
         if(getDateAdded())
         {
@@ -1007,11 +1222,33 @@ void Chapter::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[11])
+    if(dirtyFlag_[12])
     {
         if(getIpfsLink())
         {
             binder << getValueOfIpfsLink();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[13])
+    {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[14])
+    {
+        if(getLastUpdate())
+        {
+            binder << getValueOfLastUpdate();
         }
         else
         {
@@ -1067,6 +1304,18 @@ const std::vector<std::string> Chapter::updateColumns() const
     {
         ret.push_back(getColumnName(11));
     }
+    if(dirtyFlag_[12])
+    {
+        ret.push_back(getColumnName(12));
+    }
+    if(dirtyFlag_[13])
+    {
+        ret.push_back(getColumnName(13));
+    }
+    if(dirtyFlag_[14])
+    {
+        ret.push_back(getColumnName(14));
+    }
     return ret;
 }
 
@@ -1085,6 +1334,17 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[2])
     {
+        if(getMangaGlobalId())
+        {
+            binder << getValueOfMangaGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[3])
+    {
         if(getChapterNo())
         {
             binder << getValueOfChapterNo();
@@ -1094,7 +1354,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[3])
+    if(dirtyFlag_[4])
     {
         if(getChapterPostfix())
         {
@@ -1105,7 +1365,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[4])
+    if(dirtyFlag_[5])
     {
         if(getOrdinal())
         {
@@ -1116,7 +1376,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[5])
+    if(dirtyFlag_[6])
     {
         if(getPages())
         {
@@ -1127,7 +1387,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[6])
+    if(dirtyFlag_[7])
     {
         if(getTitle())
         {
@@ -1138,7 +1398,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[7])
+    if(dirtyFlag_[8])
     {
         if(getVersion())
         {
@@ -1149,7 +1409,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[8])
+    if(dirtyFlag_[9])
     {
         if(getLanguageId())
         {
@@ -1160,7 +1420,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[9])
+    if(dirtyFlag_[10])
     {
         if(getGroupId())
         {
@@ -1171,7 +1431,7 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[10])
+    if(dirtyFlag_[11])
     {
         if(getDateAdded())
         {
@@ -1182,11 +1442,33 @@ void Chapter::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[11])
+    if(dirtyFlag_[12])
     {
         if(getIpfsLink())
         {
             binder << getValueOfIpfsLink();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[13])
+    {
+        if(getGlobalId())
+        {
+            binder << getValueOfGlobalId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[14])
+    {
+        if(getLastUpdate())
+        {
+            binder << getValueOfLastUpdate();
         }
         else
         {
@@ -1213,6 +1495,14 @@ Json::Value Chapter::toJson() const
     {
         ret["manga_id"]=Json::Value();
     }
+    if(getMangaGlobalId())
+    {
+        ret["manga_global_id"]=getValueOfMangaGlobalId();
+    }
+    else
+    {
+        ret["manga_global_id"]=Json::Value();
+    }
     if(getChapterNo())
     {
         ret["chapter_no"]=(Json::UInt64)getValueOfChapterNo();
@@ -1293,6 +1583,22 @@ Json::Value Chapter::toJson() const
     {
         ret["ipfs_link"]=Json::Value();
     }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
+    }
+    if(getLastUpdate())
+    {
+        ret["last_update"]=(Json::UInt64)getValueOfLastUpdate();
+    }
+    else
+    {
+        ret["last_update"]=Json::Value();
+    }
     return ret;
 }
 
@@ -1300,7 +1606,7 @@ Json::Value Chapter::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 12)
+    if(pMasqueradingVector.size() == 15)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -1326,9 +1632,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[2].empty())
         {
-            if(getChapterNo())
+            if(getMangaGlobalId())
             {
-                ret[pMasqueradingVector[2]]=(Json::UInt64)getValueOfChapterNo();
+                ret[pMasqueradingVector[2]]=getValueOfMangaGlobalId();
             }
             else
             {
@@ -1337,9 +1643,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[3].empty())
         {
-            if(getChapterPostfix())
+            if(getChapterNo())
             {
-                ret[pMasqueradingVector[3]]=getValueOfChapterPostfix();
+                ret[pMasqueradingVector[3]]=(Json::UInt64)getValueOfChapterNo();
             }
             else
             {
@@ -1348,9 +1654,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[4].empty())
         {
-            if(getOrdinal())
+            if(getChapterPostfix())
             {
-                ret[pMasqueradingVector[4]]=(Json::UInt64)getValueOfOrdinal();
+                ret[pMasqueradingVector[4]]=getValueOfChapterPostfix();
             }
             else
             {
@@ -1359,9 +1665,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[5].empty())
         {
-            if(getPages())
+            if(getOrdinal())
             {
-                ret[pMasqueradingVector[5]]=(Json::UInt64)getValueOfPages();
+                ret[pMasqueradingVector[5]]=(Json::UInt64)getValueOfOrdinal();
             }
             else
             {
@@ -1370,9 +1676,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[6].empty())
         {
-            if(getTitle())
+            if(getPages())
             {
-                ret[pMasqueradingVector[6]]=getValueOfTitle();
+                ret[pMasqueradingVector[6]]=(Json::UInt64)getValueOfPages();
             }
             else
             {
@@ -1381,9 +1687,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[7].empty())
         {
-            if(getVersion())
+            if(getTitle())
             {
-                ret[pMasqueradingVector[7]]=(Json::UInt64)getValueOfVersion();
+                ret[pMasqueradingVector[7]]=getValueOfTitle();
             }
             else
             {
@@ -1392,9 +1698,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[8].empty())
         {
-            if(getLanguageId())
+            if(getVersion())
             {
-                ret[pMasqueradingVector[8]]=getValueOfLanguageId();
+                ret[pMasqueradingVector[8]]=(Json::UInt64)getValueOfVersion();
             }
             else
             {
@@ -1403,9 +1709,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[9].empty())
         {
-            if(getGroupId())
+            if(getLanguageId())
             {
-                ret[pMasqueradingVector[9]]=(Json::UInt64)getValueOfGroupId();
+                ret[pMasqueradingVector[9]]=getValueOfLanguageId();
             }
             else
             {
@@ -1414,9 +1720,9 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[10].empty())
         {
-            if(getDateAdded())
+            if(getGroupId())
             {
-                ret[pMasqueradingVector[10]]=(Json::UInt64)getValueOfDateAdded();
+                ret[pMasqueradingVector[10]]=(Json::UInt64)getValueOfGroupId();
             }
             else
             {
@@ -1425,13 +1731,46 @@ Json::Value Chapter::toMasqueradedJson(
         }
         if(!pMasqueradingVector[11].empty())
         {
-            if(getIpfsLink())
+            if(getDateAdded())
             {
-                ret[pMasqueradingVector[11]]=getValueOfIpfsLink();
+                ret[pMasqueradingVector[11]]=(Json::UInt64)getValueOfDateAdded();
             }
             else
             {
                 ret[pMasqueradingVector[11]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[12].empty())
+        {
+            if(getIpfsLink())
+            {
+                ret[pMasqueradingVector[12]]=getValueOfIpfsLink();
+            }
+            else
+            {
+                ret[pMasqueradingVector[12]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[13].empty())
+        {
+            if(getGlobalId())
+            {
+                ret[pMasqueradingVector[13]]=getValueOfGlobalId();
+            }
+            else
+            {
+                ret[pMasqueradingVector[13]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[14].empty())
+        {
+            if(getLastUpdate())
+            {
+                ret[pMasqueradingVector[14]]=(Json::UInt64)getValueOfLastUpdate();
+            }
+            else
+            {
+                ret[pMasqueradingVector[14]]=Json::Value();
             }
         }
         return ret;
@@ -1452,6 +1791,14 @@ Json::Value Chapter::toMasqueradedJson(
     else
     {
         ret["manga_id"]=Json::Value();
+    }
+    if(getMangaGlobalId())
+    {
+        ret["manga_global_id"]=getValueOfMangaGlobalId();
+    }
+    else
+    {
+        ret["manga_global_id"]=Json::Value();
     }
     if(getChapterNo())
     {
@@ -1533,6 +1880,22 @@ Json::Value Chapter::toMasqueradedJson(
     {
         ret["ipfs_link"]=Json::Value();
     }
+    if(getGlobalId())
+    {
+        ret["global_id"]=getValueOfGlobalId();
+    }
+    else
+    {
+        ret["global_id"]=Json::Value();
+    }
+    if(getLastUpdate())
+    {
+        ret["last_update"]=(Json::UInt64)getValueOfLastUpdate();
+    }
+    else
+    {
+        ret["last_update"]=Json::Value();
+    }
     return ret;
 }
 
@@ -1553,9 +1916,19 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
         err="The manga_id column cannot be null";
         return false;
     }
+    if(pJson.isMember("manga_global_id"))
+    {
+        if(!validJsonOfField(2, "manga_global_id", pJson["manga_global_id"], err, true))
+            return false;
+    }
+    else
+    {
+        err="The manga_global_id column cannot be null";
+        return false;
+    }
     if(pJson.isMember("chapter_no"))
     {
-        if(!validJsonOfField(2, "chapter_no", pJson["chapter_no"], err, true))
+        if(!validJsonOfField(3, "chapter_no", pJson["chapter_no"], err, true))
             return false;
     }
     else
@@ -1565,12 +1938,12 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
     }
     if(pJson.isMember("chapter_postfix"))
     {
-        if(!validJsonOfField(3, "chapter_postfix", pJson["chapter_postfix"], err, true))
+        if(!validJsonOfField(4, "chapter_postfix", pJson["chapter_postfix"], err, true))
             return false;
     }
     if(pJson.isMember("ordinal"))
     {
-        if(!validJsonOfField(4, "ordinal", pJson["ordinal"], err, true))
+        if(!validJsonOfField(5, "ordinal", pJson["ordinal"], err, true))
             return false;
     }
     else
@@ -1580,7 +1953,7 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
     }
     if(pJson.isMember("pages"))
     {
-        if(!validJsonOfField(5, "pages", pJson["pages"], err, true))
+        if(!validJsonOfField(6, "pages", pJson["pages"], err, true))
             return false;
     }
     else
@@ -1590,17 +1963,17 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
     }
     if(pJson.isMember("title"))
     {
-        if(!validJsonOfField(6, "title", pJson["title"], err, true))
+        if(!validJsonOfField(7, "title", pJson["title"], err, true))
             return false;
     }
     if(pJson.isMember("version"))
     {
-        if(!validJsonOfField(7, "version", pJson["version"], err, true))
+        if(!validJsonOfField(8, "version", pJson["version"], err, true))
             return false;
     }
     if(pJson.isMember("language_id"))
     {
-        if(!validJsonOfField(8, "language_id", pJson["language_id"], err, true))
+        if(!validJsonOfField(9, "language_id", pJson["language_id"], err, true))
             return false;
     }
     else
@@ -1610,12 +1983,12 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
     }
     if(pJson.isMember("group_id"))
     {
-        if(!validJsonOfField(9, "group_id", pJson["group_id"], err, true))
+        if(!validJsonOfField(10, "group_id", pJson["group_id"], err, true))
             return false;
     }
     if(pJson.isMember("date_added"))
     {
-        if(!validJsonOfField(10, "date_added", pJson["date_added"], err, true))
+        if(!validJsonOfField(11, "date_added", pJson["date_added"], err, true))
             return false;
     }
     else
@@ -1625,7 +1998,7 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
     }
     if(pJson.isMember("ipfs_link"))
     {
-        if(!validJsonOfField(11, "ipfs_link", pJson["ipfs_link"], err, true))
+        if(!validJsonOfField(12, "ipfs_link", pJson["ipfs_link"], err, true))
             return false;
     }
     else
@@ -1633,13 +2006,23 @@ bool Chapter::validateJsonForCreation(const Json::Value &pJson, std::string &err
         err="The ipfs_link column cannot be null";
         return false;
     }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(13, "global_id", pJson["global_id"], err, true))
+            return false;
+    }
+    if(pJson.isMember("last_update"))
+    {
+        if(!validJsonOfField(14, "last_update", pJson["last_update"], err, true))
+            return false;
+    }
     return true;
 }
 bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                  const std::vector<std::string> &pMasqueradingVector,
                                                  std::string &err)
 {
-    if(pMasqueradingVector.size() != 12)
+    if(pMasqueradingVector.size() != 15)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1686,6 +2069,11 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(3, pMasqueradingVector[3], pJson[pMasqueradingVector[3]], err, true))
                   return false;
           }
+        else
+        {
+            err="The " + pMasqueradingVector[3] + " column cannot be null";
+            return false;
+        }
       }
       if(!pMasqueradingVector[4].empty())
       {
@@ -1694,11 +2082,6 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, true))
                   return false;
           }
-        else
-        {
-            err="The " + pMasqueradingVector[4] + " column cannot be null";
-            return false;
-        }
       }
       if(!pMasqueradingVector[5].empty())
       {
@@ -1720,6 +2103,11 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(6, pMasqueradingVector[6], pJson[pMasqueradingVector[6]], err, true))
                   return false;
           }
+        else
+        {
+            err="The " + pMasqueradingVector[6] + " column cannot be null";
+            return false;
+        }
       }
       if(!pMasqueradingVector[7].empty())
       {
@@ -1736,11 +2124,6 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(8, pMasqueradingVector[8], pJson[pMasqueradingVector[8]], err, true))
                   return false;
           }
-        else
-        {
-            err="The " + pMasqueradingVector[8] + " column cannot be null";
-            return false;
-        }
       }
       if(!pMasqueradingVector[9].empty())
       {
@@ -1749,6 +2132,11 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(9, pMasqueradingVector[9], pJson[pMasqueradingVector[9]], err, true))
                   return false;
           }
+        else
+        {
+            err="The " + pMasqueradingVector[9] + " column cannot be null";
+            return false;
+        }
       }
       if(!pMasqueradingVector[10].empty())
       {
@@ -1757,11 +2145,6 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(10, pMasqueradingVector[10], pJson[pMasqueradingVector[10]], err, true))
                   return false;
           }
-        else
-        {
-            err="The " + pMasqueradingVector[10] + " column cannot be null";
-            return false;
-        }
       }
       if(!pMasqueradingVector[11].empty())
       {
@@ -1775,6 +2158,35 @@ bool Chapter::validateMasqueradedJsonForCreation(const Json::Value &pJson,
             err="The " + pMasqueradingVector[11] + " column cannot be null";
             return false;
         }
+      }
+      if(!pMasqueradingVector[12].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[12]))
+          {
+              if(!validJsonOfField(12, pMasqueradingVector[12], pJson[pMasqueradingVector[12]], err, true))
+                  return false;
+          }
+        else
+        {
+            err="The " + pMasqueradingVector[12] + " column cannot be null";
+            return false;
+        }
+      }
+      if(!pMasqueradingVector[13].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[13]))
+          {
+              if(!validJsonOfField(13, pMasqueradingVector[13], pJson[pMasqueradingVector[13]], err, true))
+                  return false;
+          }
+      }
+      if(!pMasqueradingVector[14].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[14]))
+          {
+              if(!validJsonOfField(14, pMasqueradingVector[14], pJson[pMasqueradingVector[14]], err, true))
+                  return false;
+          }
       }
     }
     catch(const Json::LogicError &e) 
@@ -1801,54 +2213,69 @@ bool Chapter::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(1, "manga_id", pJson["manga_id"], err, false))
             return false;
     }
+    if(pJson.isMember("manga_global_id"))
+    {
+        if(!validJsonOfField(2, "manga_global_id", pJson["manga_global_id"], err, false))
+            return false;
+    }
     if(pJson.isMember("chapter_no"))
     {
-        if(!validJsonOfField(2, "chapter_no", pJson["chapter_no"], err, false))
+        if(!validJsonOfField(3, "chapter_no", pJson["chapter_no"], err, false))
             return false;
     }
     if(pJson.isMember("chapter_postfix"))
     {
-        if(!validJsonOfField(3, "chapter_postfix", pJson["chapter_postfix"], err, false))
+        if(!validJsonOfField(4, "chapter_postfix", pJson["chapter_postfix"], err, false))
             return false;
     }
     if(pJson.isMember("ordinal"))
     {
-        if(!validJsonOfField(4, "ordinal", pJson["ordinal"], err, false))
+        if(!validJsonOfField(5, "ordinal", pJson["ordinal"], err, false))
             return false;
     }
     if(pJson.isMember("pages"))
     {
-        if(!validJsonOfField(5, "pages", pJson["pages"], err, false))
+        if(!validJsonOfField(6, "pages", pJson["pages"], err, false))
             return false;
     }
     if(pJson.isMember("title"))
     {
-        if(!validJsonOfField(6, "title", pJson["title"], err, false))
+        if(!validJsonOfField(7, "title", pJson["title"], err, false))
             return false;
     }
     if(pJson.isMember("version"))
     {
-        if(!validJsonOfField(7, "version", pJson["version"], err, false))
+        if(!validJsonOfField(8, "version", pJson["version"], err, false))
             return false;
     }
     if(pJson.isMember("language_id"))
     {
-        if(!validJsonOfField(8, "language_id", pJson["language_id"], err, false))
+        if(!validJsonOfField(9, "language_id", pJson["language_id"], err, false))
             return false;
     }
     if(pJson.isMember("group_id"))
     {
-        if(!validJsonOfField(9, "group_id", pJson["group_id"], err, false))
+        if(!validJsonOfField(10, "group_id", pJson["group_id"], err, false))
             return false;
     }
     if(pJson.isMember("date_added"))
     {
-        if(!validJsonOfField(10, "date_added", pJson["date_added"], err, false))
+        if(!validJsonOfField(11, "date_added", pJson["date_added"], err, false))
             return false;
     }
     if(pJson.isMember("ipfs_link"))
     {
-        if(!validJsonOfField(11, "ipfs_link", pJson["ipfs_link"], err, false))
+        if(!validJsonOfField(12, "ipfs_link", pJson["ipfs_link"], err, false))
+            return false;
+    }
+    if(pJson.isMember("global_id"))
+    {
+        if(!validJsonOfField(13, "global_id", pJson["global_id"], err, false))
+            return false;
+    }
+    if(pJson.isMember("last_update"))
+    {
+        if(!validJsonOfField(14, "last_update", pJson["last_update"], err, false))
             return false;
     }
     return true;
@@ -1857,7 +2284,7 @@ bool Chapter::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                const std::vector<std::string> &pMasqueradingVector,
                                                std::string &err)
 {
-    if(pMasqueradingVector.size() != 12)
+    if(pMasqueradingVector.size() != 15)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1928,6 +2355,21 @@ bool Chapter::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
           if(!validJsonOfField(11, pMasqueradingVector[11], pJson[pMasqueradingVector[11]], err, false))
               return false;
       }
+      if(!pMasqueradingVector[12].empty() && pJson.isMember(pMasqueradingVector[12]))
+      {
+          if(!validJsonOfField(12, pMasqueradingVector[12], pJson[pMasqueradingVector[12]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[13].empty() && pJson.isMember(pMasqueradingVector[13]))
+      {
+          if(!validJsonOfField(13, pMasqueradingVector[13], pJson[pMasqueradingVector[13]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[14].empty() && pJson.isMember(pMasqueradingVector[14]))
+      {
+          if(!validJsonOfField(14, pMasqueradingVector[14], pJson[pMasqueradingVector[14]], err, false))
+              return false;
+      }
     }
     catch(const Json::LogicError &e) 
     {
@@ -1979,24 +2421,13 @@ bool Chapter::validJsonOfField(size_t index,
                 err="The " + fieldName + " column cannot be null";
                 return false;
             }
-            if(!pJson.isUInt64())
-            {
-                err="Type error in the "+fieldName+" field";
-                return false;
-            }
-            break;
-        case 3:
-            if(pJson.isNull())
-            {
-                return true;
-            }
             if(!pJson.isString())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;                
             }
             break;
-        case 4:
+        case 3:
             if(pJson.isNull())
             {
                 err="The " + fieldName + " column cannot be null";
@@ -2006,6 +2437,17 @@ bool Chapter::validJsonOfField(size_t index,
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
+            }
+            break;
+        case 4:
+            if(pJson.isNull())
+            {
+                return true;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;                
             }
             break;
         case 5:
@@ -2023,12 +2465,13 @@ bool Chapter::validJsonOfField(size_t index,
         case 6:
             if(pJson.isNull())
             {
-                return true;
+                err="The " + fieldName + " column cannot be null";
+                return false;
             }
-            if(!pJson.isString())
+            if(!pJson.isUInt64())
             {
                 err="Type error in the "+fieldName+" field";
-                return false;                
+                return false;
             }
             break;
         case 7:
@@ -2036,13 +2479,24 @@ bool Chapter::validJsonOfField(size_t index,
             {
                 return true;
             }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;                
+            }
+            break;
+        case 8:
+            if(pJson.isNull())
+            {
+                return true;
+            }
             if(!pJson.isUInt64())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
             }
             break;
-        case 8:
+        case 9:
             if(pJson.isNull())
             {
                 err="The " + fieldName + " column cannot be null";
@@ -2054,22 +2508,10 @@ bool Chapter::validJsonOfField(size_t index,
                 return false;                
             }
             break;
-        case 9:
-            if(pJson.isNull())
-            {
-                return true;
-            }
-            if(!pJson.isUInt64())
-            {
-                err="Type error in the "+fieldName+" field";
-                return false;
-            }
-            break;
         case 10:
             if(pJson.isNull())
             {
-                err="The " + fieldName + " column cannot be null";
-                return false;
+                return true;
             }
             if(!pJson.isUInt64())
             {
@@ -2083,10 +2525,46 @@ bool Chapter::validJsonOfField(size_t index,
                 err="The " + fieldName + " column cannot be null";
                 return false;
             }
+            if(!pJson.isUInt64())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 12:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
             if(!pJson.isString())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;                
+            }
+            break;
+        case 13:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;                
+            }
+            break;
+        case 14:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isUInt64())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
             }
             break;
      

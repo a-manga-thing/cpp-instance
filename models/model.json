@@ -8,6 +8,8 @@
     "filename":"database.db",
     
     "tables":[
+        "global_state",
+        "user",
         "manga",
         "title",
         "tag",
@@ -21,6 +23,19 @@
     "relationships": {
         "enabled": true,
         "items": [
+            {
+                "type": "many to many",
+                "original_table_name": "instance",
+                "original_key": "id",
+                "pivot_table": {
+                    "table_name": "instance",
+                    "original_key": "instance_id",
+                    "target_key": "follower_id"
+                },
+                "target_table_name": "instance",
+                "target_key": "id",
+                "enable_reverse": true
+            },
             {
                 "type": "has many",
                 "original_table_name": "manga",
@@ -80,7 +95,7 @@
     },
     
     "restful_api_controllers": {
-        "enabled": true,
+        "enabled": false,
         // resource_uri: The URI to access the resource, the default value 
         // is '/*' in which the asterisk represents the table name.
         // If this option is set to a empty string, the URI is composed of the namespaces and the class name.

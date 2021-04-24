@@ -1,5 +1,11 @@
 #include "MangaCtrl.h"
 #include "Chapter.h"
+#include "Title.h"
+#include "Person.h"
+#include "Author.h"
+#include "Artist.h"
+#include "MangaTag.h"
+#include "Tag.h"
 #include "Util.h"
 #include <fmt/core.h>
 #include <sstream>
@@ -35,7 +41,7 @@ static std::string searchQuery (
     static constexpr auto fromQuery = " FROM manga";
     static constexpr auto joinQuery = " INNER JOIN title ON manga.id = title.manga_id";
     static constexpr auto whereQuery = " WHERE";
-    static constexpr auto titleQueryTemplate = " title.text LIKE '%{}%'";
+    static constexpr auto titleQueryTemplate = " title.name LIKE '%{}%'";
     static constexpr auto authorQueryTemplate = MAKETEMPLATE(person,author);
     static constexpr auto artistQueryTemplate = MAKETEMPLATE(person,artist);
     static constexpr auto tagQueryTemplate = MAKETEMPLATE(tag,manga_tag);
@@ -61,7 +67,7 @@ re: ss << ";";
     return ss.str();
 }
 
-void MangaCtrl::getSearch (
+void MangaCtrl::search (
     const HttpRequestPtr& req,
     HttpCallback&& callback,
     CSR title,
@@ -75,31 +81,35 @@ void MangaCtrl::getSearch (
     splitCSV(tagsCSV, tags, tagsEx);
     
     auto dbClientPtr = getDbClient();
-    auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
-    dbClientPtr->execSqlAsync(
-        searchQuery(title, authors, artists, tags, tagsEx),
-        [req, callbackPtr, this](const Result &r) {
-            Json::Value ret;
-            for (auto& itr : r) ret.append(Manga(itr).toJson());
-            return (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
-        },
-        [callbackPtr](const DrogonDbException &e) {
-            LOG_ERROR<<e.base().what();
-            Json::Value ret;
-            ret["error"] = "database error";
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
-            resp->setStatusCode(k500InternalServerError);
-            return (*callbackPtr)(resp);
-        });
+    
+    auto result = dbClientPtr->execSqlSync(
+        searchQuery(title, authors, artists, tags, tagsEx)
+    );
+    
+    Json::Value ret;
+    for (auto& itr : result) ret.append(mangaToJson(dbClientPtr,Manga(itr)));
+    callback(HttpResponse::newHttpJsonResponse(ret));
+}
+
+void MangaCtrl::fromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
+{
+    static constexpr auto query = "SELECT * FROM manga WHERE id = {};";
+    
+    auto dbClientPtr = getDbClient();
+    auto result = dbClientPtr->execSqlSync(fmt::format(query, id));
+    
+    if (result.size()) {
+        auto json = mangaToJson(dbClientPtr,Manga(*result.begin()));
+        callback(HttpResponse::newHttpJsonResponse(json));
+    } else {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k404NotFound);
+        callback(resp);
+    }
     
 }
 
-void MangaCtrl::getFromId(const HttpRequestPtr& req, HttpCallback&& callback, long id)
-{
-    MangaCtrlBase::getOne(req, std::move(callback), std::move(id));
-}
-
-void MangaCtrl::getChapter(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid, int ordinal)
+void MangaCtrl::chapter(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid, int ordinal)
 {
     auto dbClientPtr = getDbClient();
     auto callbackPtr = std::make_shared<HttpCallback>(std::move(callback));
@@ -122,9 +132,36 @@ void MangaCtrl::getChapter(const HttpRequestPtr& req, HttpCallback&& callback, l
         });
 }
 
-void MangaCtrl::getThumbnail(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid)
+void MangaCtrl::thumbnail(const HttpRequestPtr& req, HttpCallback&& callback, long mangaid)
 {
     //manga = ...
     //if (!fs::file_exists(...)) make_thumbnail(...);
     //resp = ...
+}
+
+MangaCtrl::MangaCtrl()
+: RestfulController({
+    "id",
+    "type",
+    "country_of_origin",
+    "publication_status",
+    "scanlation_status",
+    "mal_id",
+    "anilist_id",
+    "mangaupdates_id",
+    "global_id",
+    "update"})
+{
+    enableMasquerading({
+        "id", // the alias for the id column.
+        "type", // the alias for the type column.
+        "country_of_origin", // the alias for the country_of_origin column.
+        "publication_status", // the alias for the publication_status column.
+        "scanlation_status", // the alias for the scanlation_status column.
+        "mal_id", // the alias for the mal_id column.
+        "anilist_id", // the alias for the anilist_id column.
+        "mangaupdates_id", // the alias for the mangaupdates_id column.
+        "global_id", // the alias for the global_id column.
+        "update"  // the alias for the update column.
+    });
 }

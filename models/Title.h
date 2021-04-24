@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -42,7 +45,7 @@ class Title
     struct Cols
     {
         static const std::string _manga_id;
-        static const std::string _text;
+        static const std::string _name;
     };
 
     const static int primaryKeyNumber;
@@ -104,15 +107,15 @@ class Title
     void setMangaId(const uint64_t &pMangaId) noexcept;
 
 
-    /**  For column text  */
-    ///Get the value of the column text, returns the default value if the column is null
-    const std::string &getValueOfText() const noexcept;
+    /**  For column name  */
+    ///Get the value of the column name, returns the default value if the column is null
+    const std::string &getValueOfName() const noexcept;
     ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
-    const std::shared_ptr<std::string> &getText() const noexcept;
+    const std::shared_ptr<std::string> &getName() const noexcept;
 
-    ///Set the value of the column text
-    void setText(const std::string &pText) noexcept;
-    void setText(std::string &&pText) noexcept;
+    ///Set the value of the column name
+    void setName(const std::string &pName) noexcept;
+    void setName(std::string &&pName) noexcept;
 
 
 
@@ -127,6 +130,9 @@ class Title
                   const ExceptionCallback &ecb) const;
   private:
     friend Mapper<Title>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<Title>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
@@ -134,7 +140,7 @@ class Title
     ///For mysql or sqlite3
     void updateId(const uint64_t id);
     std::shared_ptr<uint64_t> mangaId_;
-    std::shared_ptr<std::string> text_;
+    std::shared_ptr<std::string> name_;
     struct MetaData
     {
         const std::string colName_;
@@ -171,7 +177,7 @@ class Title
         }
         if(dirtyFlag_[1])
         {
-            sql += "text,";
+            sql += "name,";
             ++parametersCount;
         }
         if(parametersCount > 0)

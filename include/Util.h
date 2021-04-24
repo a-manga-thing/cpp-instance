@@ -1,10 +1,14 @@
 #pragma once
 
 #include "Types.h"
+#include "Manga.h"
+#include <tuple>
 #include <vector>
+#include <utility>
 #include <drogon/drogon.h>
 
 bool makeThumbnail(CSR name, const drogon::HttpFile& httpFile);
+std::string md5(CSR str);
 
 std::vector<std::string> splitCSV(const std::string& str);
 
@@ -15,3 +19,18 @@ void splitCSV (
 );
 
 std::string joinVec(const std::vector<std::string>& vec);
+
+void badRequest (
+    HttpCallback& callback,
+    CSR err,
+    drogon::HttpStatusCode code = drogon::k400BadRequest
+);
+
+std::string decrypt (CSR str, CSR key, CSR pass);
+std::string encrypt (CSR id, CSR str, CSR pub);
+std::tuple<std::string, std::string, std::string> makeKeyPair(CSR str);
+
+Json::Value mangaToJson (
+    drogon::orm::DbClientPtr dbClientPtr,
+    const drogon_model::sqlite3::Manga& manga
+);

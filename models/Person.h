@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -34,10 +37,9 @@ namespace drogon_model
 {
 namespace sqlite3 
 {
-class Manga;
+class Artist;
 class Author;
 class Manga;
-class Artist;
 
 class Person
 {
@@ -133,6 +135,9 @@ class Person
                   const ExceptionCallback &ecb) const;
   private:
     friend Mapper<Person>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<Person>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;

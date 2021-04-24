@@ -11,6 +11,9 @@
 #include <drogon/orm/Field.h>
 #include <drogon/orm/SqlBinder.h>
 #include <drogon/orm/Mapper.h>
+#ifdef __cpp_impl_coroutine
+#include <drogon/orm/CoroMapper.h>
+#endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
 #include <json/json.h>
@@ -34,14 +37,13 @@ namespace drogon_model
 {
 namespace sqlite3 
 {
-class Title;
+class Artist;
+class Author;
 class Chapter;
-class Tag;
 class MangaTag;
 class Person;
-class Author;
-class Person;
-class Artist;
+class Tag;
+class Title;
 
 class Manga
 {
@@ -56,6 +58,8 @@ class Manga
         static const std::string _mal_id;
         static const std::string _anilist_id;
         static const std::string _mangaupdates_id;
+        static const std::string _global_id;
+        static const std::string _last_update;
     };
 
     const static int primaryKeyNumber;
@@ -191,8 +195,29 @@ class Manga
     void setMangaupdatesIdToNull() noexcept;
 
 
+    /**  For column global_id  */
+    ///Get the value of the column global_id, returns the default value if the column is null
+    const std::string &getValueOfGlobalId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getGlobalId() const noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 8;  }
+    ///Set the value of the column global_id
+    void setGlobalId(const std::string &pGlobalId) noexcept;
+    void setGlobalId(std::string &&pGlobalId) noexcept;
+
+
+    /**  For column last_update  */
+    ///Get the value of the column last_update, returns the default value if the column is null
+    const uint64_t &getValueOfLastUpdate() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<uint64_t> &getLastUpdate() const noexcept;
+
+    ///Set the value of the column last_update
+    void setLastUpdate(const uint64_t &pLastUpdate) noexcept;
+
+
+
+    static size_t getColumnNumber() noexcept {  return 10;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -215,6 +240,9 @@ class Manga
                    const ExceptionCallback &ecb) const;
   private:
     friend Mapper<Manga>;
+#ifdef __cpp_impl_coroutine
+    friend CoroMapper<Manga>;
+#endif
     static const std::vector<std::string> &insertColumns() noexcept;
     void outputArgs(drogon::orm::internal::SqlBinder &binder) const;
     const std::vector<std::string> updateColumns() const;
@@ -229,6 +257,8 @@ class Manga
     std::shared_ptr<uint64_t> malId_;
     std::shared_ptr<uint64_t> anilistId_;
     std::shared_ptr<uint64_t> mangaupdatesId_;
+    std::shared_ptr<std::string> globalId_;
+    std::shared_ptr<uint64_t> lastUpdate_;
     struct MetaData
     {
         const std::string colName_;
@@ -240,7 +270,7 @@ class Manga
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[8]={ false };
+    bool dirtyFlag_[10]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -293,6 +323,24 @@ class Manga
             sql += "mangaupdates_id,";
             ++parametersCount;
         }
+        if(dirtyFlag_[8])
+        {
+            sql += "global_id,";
+            ++parametersCount;
+        }
+        if(!dirtyFlag_[8])
+        {
+            needSelection=true;
+        }
+        if(dirtyFlag_[9])
+        {
+            sql += "last_update,";
+            ++parametersCount;
+        }
+        if(!dirtyFlag_[9])
+        {
+            needSelection=true;
+        }
         if(parametersCount > 0)
         {
             sql[sql.length()-1]=')';
@@ -332,6 +380,16 @@ class Manga
 
         } 
         if(dirtyFlag_[7])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[8])
+        {
+            sql.append("?,");
+
+        } 
+        if(dirtyFlag_[9])
         {
             sql.append("?,");
 

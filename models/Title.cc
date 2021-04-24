@@ -14,14 +14,14 @@ using namespace drogon;
 using namespace drogon_model::sqlite3;
 
 const std::string Title::Cols::_manga_id = "manga_id";
-const std::string Title::Cols::_text = "text";
+const std::string Title::Cols::_name = "name";
 const std::string Title::primaryKeyName = "";
 const bool Title::hasPrimaryKey = false;
 const std::string Title::tableName = "title";
 
 const std::vector<typename Title::MetaData> Title::metaData_={
 {"manga_id","uint64_t","integer",8,0,0,1},
-{"text","std::string","text",0,0,0,1}
+{"name","std::string","text",0,0,0,1}
 };
 const std::string &Title::getColumnName(size_t index) noexcept(false)
 {
@@ -36,9 +36,9 @@ Title::Title(const Row &r, const ssize_t indexOffset) noexcept
         {
             mangaId_=std::make_shared<uint64_t>(r["manga_id"].as<uint64_t>());
         }
-        if(!r["text"].isNull())
+        if(!r["name"].isNull())
         {
-            text_=std::make_shared<std::string>(r["text"].as<std::string>());
+            name_=std::make_shared<std::string>(r["name"].as<std::string>());
         }
     }
     else
@@ -58,7 +58,7 @@ Title::Title(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 1;
         if(!r[index].isNull())
         {
-            text_=std::make_shared<std::string>(r[index].as<std::string>());
+            name_=std::make_shared<std::string>(r[index].as<std::string>());
         }
     }
 
@@ -84,7 +84,7 @@ Title::Title(const Json::Value &pJson, const std::vector<std::string> &pMasquera
         dirtyFlag_[1] = true;
         if(!pJson[pMasqueradingVector[1]].isNull())
         {
-            text_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
+            name_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
 
         }
     }
@@ -100,12 +100,12 @@ Title::Title(const Json::Value &pJson) noexcept(false)
             mangaId_=std::make_shared<uint64_t>((uint64_t)pJson["manga_id"].asUInt64());
         }
     }
-    if(pJson.isMember("text"))
+    if(pJson.isMember("name"))
     {
         dirtyFlag_[1]=true;
-        if(!pJson["text"].isNull())
+        if(!pJson["name"].isNull())
         {
-            text_=std::make_shared<std::string>(pJson["text"].asString());
+            name_=std::make_shared<std::string>(pJson["name"].asString());
         }
     }
 }
@@ -131,7 +131,7 @@ void Title::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[1] = true;
         if(!pJson[pMasqueradingVector[1]].isNull())
         {
-            text_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
+            name_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
         }
     }
 }
@@ -146,12 +146,12 @@ void Title::updateByJson(const Json::Value &pJson) noexcept(false)
             mangaId_=std::make_shared<uint64_t>((uint64_t)pJson["manga_id"].asUInt64());
         }
     }
-    if(pJson.isMember("text"))
+    if(pJson.isMember("name"))
     {
         dirtyFlag_[1] = true;
-        if(!pJson["text"].isNull())
+        if(!pJson["name"].isNull())
         {
-            text_=std::make_shared<std::string>(pJson["text"].asString());
+            name_=std::make_shared<std::string>(pJson["name"].asString());
         }
     }
 }
@@ -176,25 +176,25 @@ void Title::setMangaId(const uint64_t &pMangaId) noexcept
 
 
 
-const std::string &Title::getValueOfText() const noexcept
+const std::string &Title::getValueOfName() const noexcept
 {
     const static std::string defaultValue = std::string();
-    if(text_)
-        return *text_;
+    if(name_)
+        return *name_;
     return defaultValue;
 }
-const std::shared_ptr<std::string> &Title::getText() const noexcept
+const std::shared_ptr<std::string> &Title::getName() const noexcept
 {
-    return text_;
+    return name_;
 }
-void Title::setText(const std::string &pText) noexcept
+void Title::setName(const std::string &pName) noexcept
 {
-    text_ = std::make_shared<std::string>(pText);
+    name_ = std::make_shared<std::string>(pName);
     dirtyFlag_[1] = true;
 }
-void Title::setText(std::string &&pText) noexcept
+void Title::setName(std::string &&pName) noexcept
 {
-    text_ = std::make_shared<std::string>(std::move(pText));
+    name_ = std::make_shared<std::string>(std::move(pName));
     dirtyFlag_[1] = true;
 }
 
@@ -209,7 +209,7 @@ const std::vector<std::string> &Title::insertColumns() noexcept
 {
     static const std::vector<std::string> inCols={
         "manga_id",
-        "text"
+        "name"
     };
     return inCols;
 }
@@ -229,9 +229,9 @@ void Title::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[1])
     {
-        if(getText())
+        if(getName())
         {
-            binder << getValueOfText();
+            binder << getValueOfName();
         }
         else
         {
@@ -269,9 +269,9 @@ void Title::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[1])
     {
-        if(getText())
+        if(getName())
         {
-            binder << getValueOfText();
+            binder << getValueOfName();
         }
         else
         {
@@ -290,13 +290,13 @@ Json::Value Title::toJson() const
     {
         ret["manga_id"]=Json::Value();
     }
-    if(getText())
+    if(getName())
     {
-        ret["text"]=getValueOfText();
+        ret["name"]=getValueOfName();
     }
     else
     {
-        ret["text"]=Json::Value();
+        ret["name"]=Json::Value();
     }
     return ret;
 }
@@ -320,9 +320,9 @@ Json::Value Title::toMasqueradedJson(
         }
         if(!pMasqueradingVector[1].empty())
         {
-            if(getText())
+            if(getName())
             {
-                ret[pMasqueradingVector[1]]=getValueOfText();
+                ret[pMasqueradingVector[1]]=getValueOfName();
             }
             else
             {
@@ -340,13 +340,13 @@ Json::Value Title::toMasqueradedJson(
     {
         ret["manga_id"]=Json::Value();
     }
-    if(getText())
+    if(getName())
     {
-        ret["text"]=getValueOfText();
+        ret["name"]=getValueOfName();
     }
     else
     {
-        ret["text"]=Json::Value();
+        ret["name"]=Json::Value();
     }
     return ret;
 }
@@ -363,14 +363,14 @@ bool Title::validateJsonForCreation(const Json::Value &pJson, std::string &err)
         err="The manga_id column cannot be null";
         return false;
     }
-    if(pJson.isMember("text"))
+    if(pJson.isMember("name"))
     {
-        if(!validJsonOfField(1, "text", pJson["text"], err, true))
+        if(!validJsonOfField(1, "name", pJson["name"], err, true))
             return false;
     }
     else
     {
-        err="The text column cannot be null";
+        err="The name column cannot be null";
         return false;
     }
     return true;
@@ -426,9 +426,9 @@ bool Title::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(0, "manga_id", pJson["manga_id"], err, false))
             return false;
     }
-    if(pJson.isMember("text"))
+    if(pJson.isMember("name"))
     {
-        if(!validJsonOfField(1, "text", pJson["text"], err, false))
+        if(!validJsonOfField(1, "name", pJson["name"], err, false))
             return false;
     }
     return true;

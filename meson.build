@@ -6,8 +6,12 @@ add_project_arguments(['--std=c++2a'], language : 'cpp')
 add_project_link_arguments(['--std=c++2a'], language : 'cpp')
 
 cmake = import('cmake')
+
 #ipfs_proj = cmake.subproject('cpp-ipfs-http-client')
 #ipfs_lib = ipfs_proj.dependency('ipfs-http-client')
+
+rnp_proj = cmake.subproject('rnp')
+rnp_lib = rnp_proj.dependency('librnp')
 
 dep = [
     cc.find_library('z'),
@@ -21,6 +25,8 @@ dep = [
     dependency('Drogon'),
     dependency('uuid'),
     dependency('fmt'),
+    dependency('gpgme'),
+    rnp_lib,
 #    ipfs_lib,
 ]
 
@@ -33,8 +39,15 @@ inc = [
 src = [
     'src/Main.cc',
     'src/Util.cc',
-    'controllers/MangaCtrlBase.cc',
+    'src/UtilPGP.cc',
+    'src/UtilManga.cc',
+    'src/Globals.cc',
+    'controllers/ChapterSync.cc',
+    'controllers/MangaSync.cc',
     'controllers/MangaCtrl.cc',
+    'controllers/SyncCtrl.cc',
+    'controllers/BaseCtrl.cc',
+    'controllers/UserCtrl.cc',
     'models/Artist.cc',
     'models/Chapter.cc',
     'models/MangaTag.cc',
@@ -43,6 +56,8 @@ src = [
     'models/Manga.cc',
     'models/Person.cc',
     'models/Title.cc',
+    'models/GlobalState.cc',
+    'models/User.cc',
 ]
 
 executable('instance', sources : src, dependencies : dep, include_directories : inc)
